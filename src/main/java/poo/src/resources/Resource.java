@@ -1,10 +1,23 @@
 package poo.src.resources;
 
-public abstract class Resource {
-  protected String resourceId;
+import java.util.UUID;
 
-  public String getResourceId() {
-    return resourceId;
+public abstract class Resource {
+  protected String id;
+
+  public Resource() {
+    super();
+    id = UUID.randomUUID().toString();
+  }
+
+  public Resource(String resourceId) {
+    this();
+    if (!(resourceId == null))
+      id = resourceId;
+  }
+
+  public String getId() {
+    return id;
   }
 
   public abstract ResourceTypes getType();

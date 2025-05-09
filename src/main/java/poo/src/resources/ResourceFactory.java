@@ -11,4 +11,8 @@ public class ResourceFactory {
         throw new IllegalArgumentException("Unknown resource type");
     }
   }
+
+  public static Resource createResource(ResourceTypes type) {
+    return createResource(type, null);
+  }
 }

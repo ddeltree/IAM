@@ -2,6 +2,7 @@ package poo.src;
 
 import java.util.*;
 
+// TODO adicionar a lógica de negar permissões
 public class PermissionHolder {
   private final Set<Permission> permissions = new HashSet<>();
 

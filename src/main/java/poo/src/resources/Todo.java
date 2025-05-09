@@ -1,8 +1,12 @@
 package poo.src.resources;
 
 public class Todo extends Resource {
+  public Todo() {
+    super();
+  }
+
   public Todo(String resourceId) {
-    this.resourceId = resourceId;
+    super(resourceId);
   }
 
   @Override

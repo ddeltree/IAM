@@ -5,31 +5,39 @@ import poo.src.resources.*;
 
 public class Main {
     public static void main(String[] args) {
-        // Criando e atribuindo permissões
-        var viewDocPermission = new Permission(Action.VIEW, ResourceTypes.DOCUMENT);
-        var deleteDocPermission = new Permission(Action.DELETE, ResourceTypes.DOCUMENT);
-        Resource doc = ResourceFactory.createResource(ResourceTypes.DOCUMENT, "doc1");
-        Resource doc2 = ResourceFactory.createResource(ResourceTypes.DOCUMENT, "doc2");
-        Resource todo = ResourceFactory.createResource(ResourceTypes.TODO, "todo");
+        // CRIANDO RECURSOS -- Document ou qualquer um que herde de Resource
+        var documento = new Document();
+        var documento2 = ResourceFactory.createResource(ResourceTypes.DOCUMENT); // equivalente ao de cima
 
-        User commonUser = new User("user1");
-        User adminUser = new User("admin1");
+        // CRIANDO PERMISSÕES -- permissão é uma ação sobre um recurso
+        var poderVerDocumento = new Permission(Action.VIEW, ResourceTypes.DOCUMENT);
+        var poderExcluirDocumento = new Permission(Action.DELETE, ResourceTypes.DOCUMENT);
 
-        System.out.println("Admin user can delete document: " + adminUser.hasInlinePermission(deleteDocPermission));
-        adminUser.grantPermission(deleteDocPermission);
-        System.out.println("Admin user can delete document: " + adminUser.hasInlinePermission(deleteDocPermission));
+        // CRIANDO USUÁRIOS
+        var usuarioComum = new User();
+        var usuarioAdmin = new User("admin1"); // admin1 é só um id desnecessário, para prints
+        // o usuário administrador é aquele que recebe permissões de admin
 
-        boolean canView = PermissionService.hasPermission(commonUser, doc, Action.VIEW);
-        System.out.println("Common user can view document: " + canView);
+        // CRIANDO GRUPOS
+        // Um usuário não precisa estar em um grupo
+        // Group grupoComum = new Group("Associação ordinária dos comuns");
+        Group grupoAdmin = new Group("Administradores");
 
-        Group adminGroup = new Group("Admin");
-        adminGroup.grantPermission(viewDocPermission);
-        System.out.println(
-                "Admin user can view document: " + PermissionService.hasPermission(adminUser, doc, Action.VIEW)); // Output:
-        MembershipManager.link(adminUser, adminGroup);
-        System.out.println("Admin user can view document: " + PermissionService.hasPermission(adminUser, doc,
-                Action.VIEW)); // Output:
-        System.out.println("Common user can delete document: " + PermissionService.hasPermission(commonUser, doc2,
-                Action.VIEW)); // Output:
+        // DANDO PERMISSÕES A USUÁRIOS E GRUPOS
+        usuarioComum.grantPermission(poderVerDocumento);
+        grupoAdmin.grantPermission(poderVerDocumento); // o usuário admin herda a permissão do grupo
+        grupoAdmin.grantPermission(poderExcluirDocumento); // apenas admins podem excluir documentos
+        MembershipManager.link(usuarioAdmin, grupoAdmin); // adicionar o admin ao grupo dos admins
+
+        // CHECANDO PERMISSÕES
+        var podeComumVerDocumento = PermissionService.hasPermission(usuarioComum, poderVerDocumento);
+        var podeComumExcluirDocumento = PermissionService.hasPermission(usuarioComum, documento2, Action.DELETE);
+        var podeAdminVerDocumento = PermissionService.hasPermission(usuarioAdmin, documento, Action.VIEW);
+        var podeAdminExcluirDocumento = PermissionService.hasPermission(usuarioAdmin, poderExcluirDocumento);
+
+        System.out.println("Usuário COMUM sem grupo pode VER documento: " + podeComumVerDocumento);
+        System.out.println("Usuário COMUM sem grupo pode EXCLUIR documento: " + podeComumExcluirDocumento);
+        System.out.println("Usuário ADMIN com grupo pode VER documento: " + podeAdminVerDocumento);
+        System.out.println("Usuário ADMIN com grupo pode EXCLUIR documento: " + podeAdminExcluirDocumento);
     }
 }

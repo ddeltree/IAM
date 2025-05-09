@@ -7,6 +7,10 @@ public class User {
   private final Set<Group> groups = new HashSet<>();
   private final PermissionHolder permissionHolder = new PermissionHolder(); // composition
 
+  public User() {
+    this.id = UUID.randomUUID().toString();
+  }
+
   public User(String id) {
     this.id = id;
   }
@@ -27,7 +31,7 @@ public class User {
     return res;
   }
 
-  public boolean hasInlinePermission(Permission permission) {
+  protected boolean hasInlinePermission(Permission permission) {
     return permissionHolder.has(permission);
   }
 

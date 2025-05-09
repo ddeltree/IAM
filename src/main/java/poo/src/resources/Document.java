@@ -1,8 +1,12 @@
 package poo.src.resources;
 
 public class Document extends Resource {
+  public Document() {
+    super();
+  }
+
   public Document(String resourceId) {
-    this.resourceId = resourceId;
+    super(resourceId);
   }
 
   @Override
