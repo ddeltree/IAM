@@ -4,8 +4,6 @@ import java.util.*;
 
 public class User {
   private String id;
-  private final Set<Permission> permissions = new HashSet<>();
-  private final Set<Permission> deniedPermissions = new HashSet<>();
   private final Set<Group> groups = new HashSet<>();
 
   public User(String id) {
@@ -13,30 +11,28 @@ public class User {
   }
 
   // PERMISSIONS
+  private final PermissionHolder permissionHolder = new PermissionHolder();
 
-  public void assignPermission(Permission permission) {
-    permissions.add(permission);
+  public boolean grantPermission(Permission permission) {
+    var res = permissionHolder.grant(permission);
+    if (res)
+      System.out.println("[" + id + "] " + "User permission granted: " + permission);
+    return res;
   }
 
-  public void denyPermission(Permission permission) {
-    deniedPermissions.add(permission);
+  public boolean revokePermission(Permission permission) {
+    var res = permissionHolder.revoke(permission);
+    if (res)
+      System.out.println("[" + id + "] " + "User permission revoked: " + permission);
+    return res;
   }
 
-  public void revokePermission(Permission permission) {
-    permissions.remove(permission);
-    deniedPermissions.remove(permission);
+  public boolean hasInlinePermission(Permission permission) {
+    return permissionHolder.has(permission);
   }
 
-  public boolean hasPermission(Permission permission) {
-    if (deniedPermissions.contains(permission))
-      return false;
-    if (permissions.contains(permission))
-      return true;
-    for (Group group : groups) {
-      if (group.hasPermission(permission))
-        return true;
-    }
-    return false;
+  public Set<Permission> getInlinePermissions() {
+    return permissionHolder.getPermissions();
   }
 
   // GROUPS

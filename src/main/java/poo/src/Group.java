@@ -5,12 +5,11 @@ import java.util.*;
 public class Group {
   private String name;
   private Set<User> users;
-  private Set<Permission> groupPermissions;
+  private final PermissionHolder permissionHolder = new PermissionHolder();
 
   public Group(String name) {
     this.name = name;
     this.users = new HashSet<>();
-    this.groupPermissions = new HashSet<>();
   }
 
   protected void addUser(User user) {
@@ -21,16 +20,25 @@ public class Group {
     users.remove(user);
   }
 
-  public void assignPermission(Permission permission) {
-    groupPermissions.add(permission);
-    for (User user : users) {
-      user.assignPermission(permission);
-    }
+  public boolean grantPermission(Permission permission) {
+    var res = permissionHolder.grant(permission);
+    if (res)
+      System.out.println("(" + name + ") " + "Group permission GRANTED: " + permission);
+    return res;
+  }
+
+  public boolean revokePermission(Permission permission) {
+    var res = permissionHolder.revoke(permission);
+    if (res)
+      System.out.println("(" + name + ") " + "Group permission REVOKED: " + permission);
+    return res;
   }
 
   public boolean hasPermission(Permission permission) {
-    return groupPermissions.contains(permission);
+    return permissionHolder.has(permission);
   }
 
-  // getters and setters
+  public Set<Permission> getInlinePermissions() {
+    return permissionHolder.getPermissions();
+  }
 }
