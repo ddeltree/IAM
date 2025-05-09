@@ -5,7 +5,7 @@ import java.util.*;
 public class Group {
   private String name;
   private Set<User> users;
-  private final PermissionHolder permissionHolder = new PermissionHolder();
+  private final PermissionHolder permissionHolder = new PermissionHolder(); // composition
 
   public Group(String name) {
     this.name = name;
@@ -19,6 +19,8 @@ public class Group {
   protected void removeUser(User user) {
     users.remove(user);
   }
+
+  // PERMISSIONS
 
   public boolean grantPermission(Permission permission) {
     var res = permissionHolder.grant(permission);
@@ -38,7 +40,7 @@ public class Group {
     return permissionHolder.has(permission);
   }
 
-  public Set<Permission> getInlinePermissions() {
+  public Set<Permission> getPermissions() {
     return permissionHolder.getPermissions();
   }
 }

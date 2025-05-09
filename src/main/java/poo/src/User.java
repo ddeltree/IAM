@@ -5,13 +5,13 @@ import java.util.*;
 public class User {
   private String id;
   private final Set<Group> groups = new HashSet<>();
+  private final PermissionHolder permissionHolder = new PermissionHolder(); // composition
 
   public User(String id) {
     this.id = id;
   }
 
   // PERMISSIONS
-  private final PermissionHolder permissionHolder = new PermissionHolder();
 
   public boolean grantPermission(Permission permission) {
     var res = permissionHolder.grant(permission);
