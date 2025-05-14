@@ -2,9 +2,25 @@ package poo;
 
 import poo.iam.*;
 import poo.iam.resources.*;
+import io.javalin.Javalin;
 
 public class Main {
     public static void main(String[] args) {
+        // Javalin app = Javalin.create(config -> {
+        // config.bundledPlugins.enableCors(cors -> {
+        // cors.addRule(it -> {
+        // it.anyHost(); // Habilita acesso de qualquer origem (CORS)
+        // });
+        // });
+        // }).start(7000);
+
+        // app.get("/hello", ctx -> {
+        // ctx.result("Olá, mundo!");
+        // });
+        exemplo();
+    }
+
+    public static void exemplo() {
         // CRIANDO RECURSOS -- Document ou qualquer um que herde de Resource
         var documento = new Document();
         var documento2 = ResourceFactory.createResource(ResourceTypes.DOCUMENT); // equivalente ao de cima
@@ -31,8 +47,8 @@ public class Main {
 
         // CHECANDO PERMISSÕES
         var podeComumVerDocumento = PermissionService.hasPermission(usuarioComum, poderVerDocumento);
-        var podeComumExcluirDocumento = PermissionService.hasPermission(usuarioComum, documento2, Action.DELETE);
-        var podeAdminVerDocumento = PermissionService.hasPermission(usuarioAdmin, documento, Action.VIEW);
+        var podeComumExcluirDocumento = PermissionService.hasPermission(usuarioComum, Action.DELETE, documento2);
+        var podeAdminVerDocumento = PermissionService.hasPermission(usuarioAdmin, Action.VIEW, documento);
         var podeAdminExcluirDocumento = PermissionService.hasPermission(usuarioAdmin, poderExcluirDocumento);
 
         System.out.println("Usuário COMUM sem grupo pode VER documento: " + podeComumVerDocumento);

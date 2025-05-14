@@ -1,18 +1,14 @@
 package poo.iam.resources;
 
 public class ResourceFactory {
-  public static Resource createResource(ResourceTypes type, String resourceId) {
+  public static Resource createResource(ResourceTypes type) {
     switch (type) {
       case DOCUMENT:
-        return new Document(resourceId);
+        return new Document();
       case TODO:
-        return new Todo(resourceId);
+        return new Todo();
       default:
         throw new IllegalArgumentException("Unknown resource type");
     }
-  }
-
-  public static Resource createResource(ResourceTypes type) {
-    return createResource(type, null);
   }
 }

@@ -13,7 +13,7 @@ public class PermissionService {
     return false;
   }
 
-  public static boolean hasPermission(User user, Resource resource, Action action) {
+  public static boolean hasPermission(User user, Action action, Resource resource) {
     var permission = new Permission(action, resource);
     return hasPermission(user, permission);
   }

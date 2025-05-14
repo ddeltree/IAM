@@ -1,12 +1,8 @@
 package poo.iam.resources;
 
-public class Todo extends Resource {
+public class Todo implements Resource {
   public Todo() {
     super();
-  }
-
-  public Todo(String resourceId) {
-    super(resourceId);
   }
 
   @Override
