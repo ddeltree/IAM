@@ -14,7 +14,7 @@ public class PermissionService {
   }
 
   public static boolean hasPermission(User user, Resource resource, Action action) {
-    var permission = new Permission(action, resource.getType());
+    var permission = new Permission(action, resource);
     return hasPermission(user, permission);
   }
 }

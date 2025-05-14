@@ -10,8 +10,8 @@ public class Main {
         var documento2 = ResourceFactory.createResource(ResourceTypes.DOCUMENT); // equivalente ao de cima
 
         // CRIANDO PERMISSÕES -- permissão é uma ação sobre um recurso
-        var poderVerDocumento = new Permission(Action.VIEW, ResourceTypes.DOCUMENT);
-        var poderExcluirDocumento = new Permission(Action.DELETE, ResourceTypes.DOCUMENT);
+        var poderVerDocumento = new Permission(Action.VIEW, documento);
+        var poderExcluirDocumento = new Permission(Action.DELETE, documento2);
 
         // CRIANDO USUÁRIOS
         var usuarioComum = new User();

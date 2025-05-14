@@ -20,5 +20,5 @@ public abstract class Resource {
     return id;
   }
 
-  public abstract ResourceTypes getType();
+  public abstract String getType();
 }

@@ -10,7 +10,7 @@ public class Todo extends Resource {
   }
 
   @Override
-  public ResourceTypes getType() {
-    return ResourceTypes.TODO;
+  public String getType() {
+    return ResourceTypes.TODO.name();
   }
 }

@@ -10,7 +10,7 @@ public class Document extends Resource {
   }
 
   @Override
-  public ResourceTypes getType() {
-    return ResourceTypes.DOCUMENT;
+  public String getType() {
+    return ResourceTypes.DOCUMENT.name();
   }
 }
