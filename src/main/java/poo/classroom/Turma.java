@@ -2,7 +2,6 @@ package poo.classroom;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import poo.iam.User;
 import poo.iam.resources.Resource;
@@ -10,7 +9,6 @@ import poo.iam.resources.Resource;
 public class Turma implements Resource {
   private String nome;
   private User professor;
-  private String id = UUID.randomUUID().toString();
   private List<User> alunos = new ArrayList<>();
 
   public Turma(String nome, User professor) {
