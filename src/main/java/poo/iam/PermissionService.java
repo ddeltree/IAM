@@ -1,6 +1,6 @@
-package poo.src;
+package poo.iam;
 
-import poo.src.resources.Resource;
+import poo.iam.resources.Resource;
 
 public class PermissionService {
   public static boolean hasPermission(User user, Permission permission) {

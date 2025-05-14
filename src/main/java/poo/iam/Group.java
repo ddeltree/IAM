@@ -1,4 +1,4 @@
-package poo.src;
+package poo.iam;
 
 import java.util.*;
 

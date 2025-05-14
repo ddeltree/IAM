@@ -1,4 +1,4 @@
-package poo.src;
+package poo.iam;
 
 public class MembershipManager {
   public static void link(User user, Group group) {

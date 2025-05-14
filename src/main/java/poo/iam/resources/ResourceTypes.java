@@ -1,4 +1,4 @@
-package poo.src.resources;
+package poo.iam.resources;
 
 public enum ResourceTypes {
   DOCUMENT, TODO

@@ -1,7 +1,7 @@
 package poo;
 
-import poo.src.*;
-import poo.src.resources.*;
+import poo.iam.*;
+import poo.iam.resources.*;
 
 public class Main {
     public static void main(String[] args) {

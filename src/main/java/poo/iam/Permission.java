@@ -1,8 +1,8 @@
-package poo.src;
+package poo.iam;
 
 import java.util.Objects;
 
-import poo.src.resources.ResourceTypes;
+import poo.iam.resources.ResourceTypes;
 
 public class Permission {
   private Action action;
