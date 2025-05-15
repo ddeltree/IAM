@@ -28,6 +28,14 @@ public abstract class Publicacao implements Resource {
     return corpo;
   }
 
+  public void setCorpo(String corpo) {
+    this.corpo = corpo;
+  }
+
+  public void setTitulo(String titulo) {
+    this.titulo = titulo;
+  }
+
   public User getAutor() {
     return autor;
   }

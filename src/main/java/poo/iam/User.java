@@ -4,6 +4,7 @@ import java.util.*;
 
 public class User {
   private String id;
+  private String name;
   private final Set<Group> groups = new HashSet<>();
   private final PermissionHolder permissionHolder = new PermissionHolder(); // composition
 
@@ -13,6 +14,11 @@ public class User {
 
   public User(String id) {
     this.id = id;
+  }
+
+  public User(String id, String name) {
+    this(id);
+    this.name = name;
   }
 
   // PERMISSIONS
@@ -57,5 +63,13 @@ public class User {
 
   public String getId() {
     return id;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
   }
 }

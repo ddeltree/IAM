@@ -29,6 +29,10 @@ public class Comentario implements Resource {
     return conteudo;
   }
 
+  public void setConteudo(String conteudo) {
+    this.conteudo = conteudo.strip();
+  }
+
   public User getAutor() {
     return autor;
   }
