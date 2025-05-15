@@ -38,8 +38,7 @@ public class UserController {
 
   private static void criar(Context ctx) {
     UserDTO dto = ctx.bodyAsClass(UserDTO.class);
-    User user = new User();
-    user.setName(dto.name);
+    User user = new User(dto.name);
     usuarios.put(user.getId(), user);
     ctx.status(201).json(toDTO(user));
   }

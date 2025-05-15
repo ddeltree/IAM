@@ -9,13 +9,15 @@ import poo.iam.User;
 import poo.iam.resources.Resource;
 
 public class Turma implements Resource {
-  private final String id = UUID.randomUUID().toString();
+  private static long proximoId = 1; // contador global
+  private final String id;
   private String nome;
   private User professor;
   private List<User> alunos = new ArrayList<>();
   private List<Post> posts = new ArrayList<>();
 
   public Turma(String nome, User professor) {
+    this.id = String.valueOf(proximoId++);
     this.nome = nome;
     this.professor = professor;
   }

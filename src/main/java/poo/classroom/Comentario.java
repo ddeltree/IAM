@@ -1,12 +1,11 @@
 package poo.classroom;
 
-import java.util.UUID;
-
 import poo.iam.User;
 import poo.iam.resources.Resource;
 
 public class Comentario implements Resource {
-  private final String id = UUID.randomUUID().toString();
+  private static long proximoId = 1; // contador global
+  protected final String id = String.valueOf(proximoId++);
   private String conteudo;
   private User autor;
   private Post post;

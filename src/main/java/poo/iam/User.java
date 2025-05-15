@@ -3,21 +3,16 @@ package poo.iam;
 import java.util.*;
 
 public class User {
-  private String id;
+  private static long proximoId = 1; // contador global
+  protected final String id = String.valueOf(proximoId++);
   private String name;
   private final Set<Group> groups = new HashSet<>();
   private final PermissionHolder permissionHolder = new PermissionHolder(); // composition
 
   public User() {
-    this.id = UUID.randomUUID().toString();
   }
 
-  public User(String id) {
-    this.id = id;
-  }
-
-  public User(String id, String name) {
-    this(id);
+  public User(String name) {
     this.name = name;
   }
 

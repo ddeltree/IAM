@@ -1,7 +1,5 @@
 package poo.classroom;
 
-import poo.iam.User;
-
 public class Atividade extends Publicacao {
   private String dataEntrega;
 
