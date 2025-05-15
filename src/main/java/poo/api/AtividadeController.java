@@ -37,6 +37,10 @@ public class AtividadeController {
   private static void criar(Context ctx) {
     AtividadeDTO dto = ctx.bodyAsClass(AtividadeDTO.class);
     var turma = TurmaController.getTurma(dto.turmaId);
+    if (turma == null) {
+      ctx.status(404).result("Turma não encontrada");
+      return;
+    }
     Atividade atividade = new Atividade(dto.titulo, dto.corpo, turma);
     atividade.setDataEntrega(dto.dataEntrega);
     atividades.put(atividade.getId(), atividade);

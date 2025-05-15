@@ -35,7 +35,15 @@ public class ComentarioController {
   private static void criar(Context ctx) {
     ComentarioDTO dto = ctx.bodyAsClass(ComentarioDTO.class);
     var post = PostController.get(dto.postId);
+    if (post == null) {
+      ctx.status(404).result("Post não encontrado");
+      return;
+    }
     var autor = UserController.getUser(dto.autorId);
+    if (autor == null) {
+      ctx.status(404).result("Autor não encontrado");
+      return;
+    }
     Comentario comentario = new Comentario(dto.conteudo, autor, post);
     comentarios.put(comentario.getId(), comentario);
     ctx.status(201).json(comentario);

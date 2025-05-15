@@ -40,6 +40,10 @@ public class PostController {
   private static void criar(Context ctx) {
     PostDTO dto = ctx.bodyAsClass(PostDTO.class);
     User autor = UserController.getUser(dto.autorId);
+    if (autor == null) {
+      ctx.status(404).result("Autor não encontrado");
+      return;
+    }
     Post post = new Post(dto.titulo, dto.corpo, autor);
     posts.put(post.getId(), post);
     ctx.status(201).json(post);
