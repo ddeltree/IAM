@@ -7,7 +7,6 @@ import poo.iam.resources.Resource;
 
 public class Comentario implements Resource {
   private final String id = UUID.randomUUID().toString();
-
   private String conteudo;
   private User autor;
   private Post post;
