@@ -5,6 +5,7 @@ import poo.api.AtividadeController;
 import poo.api.ComentarioController;
 import poo.api.PostController;
 import poo.api.TurmaController;
+import poo.api.UserController;
 
 public class Main {
     public static void main(String[] args) {
@@ -20,5 +21,6 @@ public class Main {
         PostController.register(app);
         AtividadeController.register(app);
         ComentarioController.register(app);
+        UserController.register(app);
     }
 }
