@@ -39,7 +39,7 @@ public class PostController {
 
   private static void criar(Context ctx) {
     PostDTO dto = ctx.bodyAsClass(PostDTO.class);
-    User autor = new User(dto.autorId);
+    User autor = UserController.getUser(dto.autorId);
     Post post = new Post(dto.titulo, dto.corpo, autor);
     posts.put(post.getId(), post);
     ctx.status(201).json(post);

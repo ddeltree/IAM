@@ -11,6 +11,10 @@ public class TurmaController {
 
   private static final Map<String, Turma> turmas = new HashMap<>();
 
+  public static Turma getTurma(String id) {
+    return turmas.get(id);
+  }
+
   public static void register(Javalin app) {
     app.get("/turmas", TurmaController::listar);
     app.get("/turmas/{id}", TurmaController::ver);
@@ -35,7 +39,11 @@ public class TurmaController {
 
   private static void criar(Context ctx) {
     TurmaDTO dto = ctx.bodyAsClass(TurmaDTO.class);
-    var professor = new User(dto.professorId, dto.professorNome);
+    User professor = UserController.getUser(dto.professorId);
+    if (professor == null) {
+      ctx.status(404).result("Professor não encontrado");
+      return;
+    }
     Turma turma = new Turma(dto.nome, professor);
     turmas.put(turma.getId(), turma);
     ctx.status(201).json(turma);
@@ -66,6 +74,5 @@ public class TurmaController {
   public static class TurmaDTO {
     public String nome;
     public String professorId;
-    public String professorNome;
   }
 }

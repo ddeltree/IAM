@@ -36,9 +36,8 @@ public class AtividadeController {
 
   private static void criar(Context ctx) {
     AtividadeDTO dto = ctx.bodyAsClass(AtividadeDTO.class);
-    var professor = new User(dto.autorId);
-    var turma = new Turma(dto.turmaId, professor);
-    Atividade atividade = new Atividade(dto.titulo, dto.corpo, professor, turma);
+    var turma = TurmaController.getTurma(dto.turmaId);
+    Atividade atividade = new Atividade(dto.titulo, dto.corpo, turma);
     atividade.setDataEntrega(dto.dataEntrega);
     atividades.put(atividade.getId(), atividade);
     ctx.status(201).json(atividade);
@@ -71,7 +70,6 @@ public class AtividadeController {
     public String titulo;
     public String corpo;
     public String dataEntrega; // ISO-8601 (ex: "2025-05-15")
-    public String autorId;
     public String turmaId;
   }
 }

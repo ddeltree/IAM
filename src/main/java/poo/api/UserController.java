@@ -10,7 +10,7 @@ public class UserController {
 
   private static final Map<String, User> usuarios = new HashMap<>();
 
-  public User getUser(String id) {
+  public static User getUser(String id) {
     return usuarios.get(id);
   }
 

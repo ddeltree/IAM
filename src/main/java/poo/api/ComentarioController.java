@@ -3,7 +3,6 @@ package poo.api;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import poo.classroom.Comentario;
-import poo.iam.User;
 
 import java.util.*;
 
@@ -36,7 +35,7 @@ public class ComentarioController {
   private static void criar(Context ctx) {
     ComentarioDTO dto = ctx.bodyAsClass(ComentarioDTO.class);
     var post = PostController.get(dto.postId);
-    var autor = new User(dto.autorId);
+    var autor = UserController.getUser(dto.autorId);
     Comentario comentario = new Comentario(dto.conteudo, autor, post);
     comentarios.put(comentario.getId(), comentario);
     ctx.status(201).json(comentario);

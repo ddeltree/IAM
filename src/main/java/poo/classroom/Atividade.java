@@ -5,10 +5,10 @@ import poo.iam.User;
 public class Atividade extends Publicacao {
   private String dataEntrega;
 
-  public Atividade(String titulo, String corpo, User autor, Turma turma) {
+  public Atividade(String titulo, String corpo, Turma turma) {
     this.titulo = titulo.strip();
     this.corpo = corpo.strip();
-    this.autor = autor;
+    this.autor = turma.getProfessorResponsavel();
     this.turma = turma;
   }
 
