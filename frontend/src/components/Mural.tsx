@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { useUser } from '@/providers/UserProvider'
 import useSWR from 'swr'
+import { Edit } from 'lucide-react'
 
 export default function Mural() {
   const turma = useOutletContext<any>()
@@ -68,7 +69,7 @@ export default function Mural() {
           {data?.map((post) => (
             <div
               key={post.id}
-              className="flex w-full flex-col gap-2 rounded-lg border p-4 shadow-xs"
+              className="relative flex w-full flex-col gap-2 rounded-lg border p-4 shadow-xs"
             >
               <div className="flex items-center justify-start">
                 <Avatar className="h-12 w-12">
@@ -85,6 +86,11 @@ export default function Mural() {
                   <p>{post.corpo}</p>
                 </div>
               </div>
+              <Edit
+                className="text-muted-foreground absolute top-4 right-4"
+                size={18}
+                onClick={() => {}}
+              />
             </div>
           ))}
         </div>

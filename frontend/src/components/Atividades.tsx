@@ -16,18 +16,36 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from '@/components/ui/popover'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+
 import { Calendar } from '@/components/ui/calendar'
 import { Label } from '@radix-ui/react-label'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon, ClipboardList } from 'lucide-react'
 import { format } from 'date-fns'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useParams } from 'react-router'
 
 export default function Atividades() {
-  const { data, error, isLoading } = useSWR('listar-atividades', listar)
+  const { data, error, isLoading, mutate } = useSWR('listar-atividades', listar)
+
   if (error) return <div>Erro ao listar atividades</div>
   if (isLoading)
     return (
@@ -46,27 +64,36 @@ export default function Atividades() {
           <p className="italic">Nenhuma atividade encontrada</p>
         )}
         {data?.map((atividade) => (
-          <div
-            key={atividade.id}
-            className="flex items-center space-y-3 rounded-xl border-b px-8 py-1"
-          >
-            <img
-              className="h-16 w-16 rounded-full"
-              src={atividade.imagem}
-              alt={atividade.titulo}
-            />
-            <div className="m-4 space-y-2">
-              <h2 className="text-xl font-semibold">{atividade.titulo}</h2>
-              <p>{atividade.descricao}</p>
-            </div>
-          </div>
+          <Collapsible key={atividade.id} className="rounded-xl border-b">
+            <CollapsibleTrigger className="flex w-full items-center gap-2 px-4 py-2">
+              <div className="bg-accent text-accent-foreground flex h-10 w-10 items-center justify-center rounded-full">
+                <ClipboardList size={24} />
+              </div>
+              <h2 className="text-lg font-semibold">{atividade.titulo}</h2>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent className="space-y-2 px-4 pb-2 pl-8 text-left">
+              <p className="text-accent-foreground">{atividade.corpo}</p>
+              <div className="text-secondary-foreground flex items-baseline justify-between text-xs">
+                <p>Data de entrega: {atividade.dataEntrega}</p>
+                <AlertaExclusao idAtividade={atividade.id} onExcluir={mutate} />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         ))}
-        <div className="flex justify-end">
-          <DialogDemo />
+        <div className="mt-4 flex justify-end">
+          <DialogDemo onCriar={mutate} />
         </div>
       </div>
     </div>
   )
+}
+
+async function excluir(id: string) {
+  const response = await fetch(`http://localhost:7000/atividades/${id}`, {
+    method: 'DELETE',
+  })
+  return response.text()
 }
 
 async function listar() {
@@ -96,7 +123,7 @@ async function criar(
   return response.json()
 }
 
-function DialogDemo() {
+function DialogDemo({ onCriar }: { onCriar: () => void }) {
   const [date, setDate] = useState<Date>()
   const [titulo, setTitulo] = useState<string>('')
   const [corpo, setCorpo] = useState<string>('')
@@ -146,10 +173,11 @@ function DialogDemo() {
         <DialogFooter>
           <Button
             type="submit"
-            onClick={() => {
+            onClick={async () => {
               console.log(titulo, corpo, turmaId, date)
               if (!titulo.trim() || !corpo.trim() || !turmaId || !date) return
-              criar(titulo, corpo, turmaId, date)
+              await criar(titulo, corpo, turmaId, date)
+              onCriar()
             }}
           >
             Criar atividade
@@ -190,5 +218,43 @@ function DatePickerDemo({
         />
       </PopoverContent>
     </Popover>
+  )
+}
+
+function AlertaExclusao({
+  idAtividade,
+  onExcluir,
+}: {
+  idAtividade: string
+  onExcluir: () => void
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger>
+        <Button variant={'destructive'} size={'sm'}>
+          Excluir
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir atividade?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Isso não pode ser desfeito. A atividade será permanentemente
+            excluida.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={async () => {
+              await excluir(idAtividade)
+              onExcluir()
+            }}
+          >
+            Continuar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }
