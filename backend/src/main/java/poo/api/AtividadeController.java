@@ -3,8 +3,6 @@ package poo.api;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import poo.classroom.Atividade;
-import poo.classroom.Turma;
-import poo.iam.User;
 
 import java.util.*;
 

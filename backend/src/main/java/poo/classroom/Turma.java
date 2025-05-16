@@ -3,7 +3,6 @@ package poo.classroom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import poo.iam.User;
 import poo.iam.resources.Resource;
