@@ -7,6 +7,7 @@ import CriarUsuario from './components/CriarUsuario'
 import VerUsuario from './components/VerUsuario'
 import TurmaLayout from './components/layout/TurmaLayout'
 import ListaTurmas from './components/ListaTurmas'
+import Mural from './components/Mural'
 
 export default function App() {
   return (
@@ -21,7 +22,7 @@ export default function App() {
           <Route index element={<ListaTurmas />} />
           <Route path="criar" element={<CriarTurma />} />
           <Route path=":id" element={<TurmaLayout />}>
-            <Route index element={<p>mural</p>} />
+            <Route index element={<Mural />} />
             <Route path="atividades" element={<p>atividades</p>} />
             <Route path="pessoas" element={<p>pessoas</p>} />
           </Route>

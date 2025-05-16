@@ -1,9 +1,11 @@
-import { Link, Outlet } from 'react-router'
+import { Link, Outlet, useParams } from 'react-router'
 import { cn } from '../../lib/utils'
+import useSWR from 'swr'
 
 export default function TurmaLayout() {
   const secondaryHeaderHeight = '48px'
-
+  const { id } = useParams()
+  const { data } = useSWR(`turmas/${id}`, () => buscarTurma(id))
   return (
     <div
       style={
@@ -20,17 +22,18 @@ export default function TurmaLayout() {
           'left-[calc(var(--margin)+var(--sidebar-width))]',
           'top-[calc(var(--header-height)+var(--margin))]',
           'h-[var(--secondary-header-height)]',
+          'bg-background text-base shadow-xs',
         )}
       >
         {links.map((link) => (
-          <Link key={link[0]} to={link[1]}>
+          <Link key={link[0]} to={link[1]} className="font-semibold">
             {link[0]}
           </Link>
         ))}
       </div>
 
-      <div className="pt-4">
-        <Outlet />
+      <div className="pt-6">
+        <Outlet context={data} />
       </div>
     </div>
   )
@@ -41,3 +44,10 @@ const links = [
   ['Atividades', 'atividades'],
   ['Pessoas', 'pessoas'],
 ]
+
+async function buscarTurma(id: string | undefined) {
+  if (!id) return
+  const response = await fetch(`http://localhost:7000/turmas/${id}`)
+  const turmas = await response.json()
+  return turmas as Record<string, any>[]
+}

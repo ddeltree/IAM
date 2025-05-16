@@ -44,7 +44,12 @@ public class PostController {
       ctx.status(404).result("Autor não encontrado");
       return;
     }
-    Post post = new Post(dto.titulo, dto.corpo, autor);
+    var turma = TurmaController.getTurma(dto.turmaId);
+    if (turma == null) {
+      ctx.status(404).result("Turma não encontrada");
+      return;
+    }
+    Post post = new Post(dto.titulo, dto.corpo, autor, turma);
     posts.put(post.getId(), post);
     ctx.status(201).json(post);
   }
@@ -75,5 +80,6 @@ public class PostController {
     public String titulo;
     public String corpo;
     public String autorId;
+    public String turmaId;
   }
 }

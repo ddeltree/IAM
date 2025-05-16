@@ -4,7 +4,7 @@ import { cn } from '../../lib/utils'
 
 export default function MainLayout() {
   const { user } = useUser()
-  const headerHeight = '64px' // 16 * 4 = 64px
+  const headerHeight = '44px' // 16 * 4 = 64px
   const sidebarWidth = '192px' // 48 * 4 = 192px
   const margin = '16px' // 4 * 4 = 16px outer margin
   return (
@@ -21,9 +21,10 @@ export default function MainLayout() {
       {/* Fixed Header */}
       <div
         className={cn(
-          'fixed top-[var(--margin)] right-[var(--margin)] left-[var(--margin)]',
+          'fixed top-0 right-[var(--margin)] left-[var(--margin)] pt-[var(--margin)]',
           'z-50 flex items-baseline justify-between border-b px-2',
-          'h-[var(--header-height)]',
+          'h-[calc(var(--header-height)+var(--margin))]',
+          'bg-background text-base',
         )}
       >
         <div className="flex items-baseline gap-4">
@@ -49,6 +50,7 @@ export default function MainLayout() {
           'z-40 border-r',
           'w-[var(--sidebar-width)]',
           'p-2',
+          'bg-background text-base',
         )}
       >
         a
@@ -56,7 +58,6 @@ export default function MainLayout() {
 
       <div
         className={cn(
-          'h-screen',
           'ml-[calc(var(--sidebar-width)+var(--margin))]',
           'mt-[calc(var(--header-height)+var(--margin))]',
           'flex justify-center',
