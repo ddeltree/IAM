@@ -16,6 +16,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from '@/components/ui/popover'
+import { Separator } from '@/components/ui/separator'
 import {
   Collapsible,
   CollapsibleContent,
@@ -37,11 +38,11 @@ import { Calendar } from '@/components/ui/calendar'
 import { Label } from '@radix-ui/react-label'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
-import { CalendarIcon, ClipboardList } from 'lucide-react'
+import { CalendarIcon, ClipboardList, Expand } from 'lucide-react'
 import { format } from 'date-fns'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 
 export default function Atividades() {
   const { data, error, isLoading, mutate } = useSWR('listar-atividades', listar)
@@ -70,23 +71,83 @@ export default function Atividades() {
                 <ClipboardList size={24} />
               </div>
               <h2 className="text-lg font-semibold">{atividade.titulo}</h2>
+              <Link className="ml-auto" to={`${atividade.id}`}>
+                <Expand className="text-muted-foreground" size={18} />
+              </Link>
             </CollapsibleTrigger>
 
             <CollapsibleContent className="space-y-2 px-4 pb-2 pl-8 text-left">
               <p className="text-accent-foreground">{atividade.corpo}</p>
+              <Separator />
               <div className="text-secondary-foreground flex items-baseline justify-between text-xs">
                 <p>Data de entrega: {atividade.dataEntrega}</p>
-                <AlertaExclusao idAtividade={atividade.id} onExcluir={mutate} />
+                <div>
+                  <DialogDemo
+                    {...{
+                      confirmarDialog: 'Salvar mudanças',
+                      descricaoDialog: 'Dẽ uma nova descrição para a atividade',
+                      tituloDialog: 'Editar atividade',
+                      onConfirmar: async (titulo, corpo, turmaId, date) => {
+                        if (
+                          !titulo.trim() ||
+                          !corpo.trim() ||
+                          !turmaId ||
+                          !date
+                        )
+                          return
+                        await atualizar(atividade.id, titulo, corpo, date)
+                        mutate()
+                      },
+                    }}
+                  />
+                  <AlertaExclusao
+                    idAtividade={atividade.id}
+                    onExcluir={mutate}
+                  />
+                </div>
               </div>
             </CollapsibleContent>
           </Collapsible>
         ))}
         <div className="mt-4 flex justify-end">
-          <DialogDemo onCriar={mutate} />
+          <DialogDemo
+            {...{
+              cancelarDialog: 'Cancelar',
+              confirmarDialog: 'Criar',
+              descricaoDialog: 'Descreva a atividade',
+              tituloDialog: 'Criar atividade',
+              onConfirmar: async (titulo, corpo, turmaId, date) => {
+                console.log(titulo, corpo, turmaId, date)
+                if (!titulo.trim() || !corpo.trim() || !turmaId || !date) return
+                await criar(titulo, corpo, turmaId, date)
+                mutate()
+              },
+            }}
+          />
         </div>
       </div>
     </div>
   )
+}
+
+export async function atualizar(
+  id: string,
+  titulo: string,
+  corpo: string,
+  dataEntrega: Date,
+) {
+  const response = await fetch(`http://localhost:7000/atividades/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      titulo,
+      corpo,
+      dataEntrega: format(dataEntrega, 'yyyy-MM-dd'),
+    }),
+  })
+  return response.json()
 }
 
 async function excluir(id: string) {
@@ -123,7 +184,22 @@ async function criar(
   return response.json()
 }
 
-function DialogDemo({ onCriar }: { onCriar: () => void }) {
+export function DialogDemo({
+  tituloDialog,
+  descricaoDialog,
+  confirmarDialog,
+  onConfirmar,
+}: {
+  tituloDialog: string
+  descricaoDialog: string
+  confirmarDialog: string
+  onConfirmar: (
+    titulo: string,
+    corpo: string,
+    turmaId: string,
+    date: Date,
+  ) => void
+}) {
   const [date, setDate] = useState<Date>()
   const [titulo, setTitulo] = useState<string>('')
   const [corpo, setCorpo] = useState<string>('')
@@ -133,14 +209,12 @@ function DialogDemo({ onCriar }: { onCriar: () => void }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline">Nova atividade</Button>
+        <Button variant="outline">{tituloDialog}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Nova atividade</DialogTitle>
-          <DialogDescription>
-            Criar uma nova atividade para esta disciplina
-          </DialogDescription>
+          <DialogTitle>{tituloDialog}</DialogTitle>
+          <DialogDescription>{descricaoDialog}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
@@ -173,14 +247,12 @@ function DialogDemo({ onCriar }: { onCriar: () => void }) {
         <DialogFooter>
           <Button
             type="submit"
-            onClick={async () => {
-              console.log(titulo, corpo, turmaId, date)
+            onClick={() => {
               if (!titulo.trim() || !corpo.trim() || !turmaId || !date) return
-              await criar(titulo, corpo, turmaId, date)
-              onCriar()
+              onConfirmar(titulo, corpo, turmaId, date)
             }}
           >
-            Criar atividade
+            {confirmarDialog}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -221,7 +293,7 @@ function DatePickerDemo({
   )
 }
 
-function AlertaExclusao({
+export function AlertaExclusao({
   idAtividade,
   onExcluir,
 }: {

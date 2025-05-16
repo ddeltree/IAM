@@ -9,6 +9,7 @@ import TurmaLayout from './components/layout/TurmaLayout'
 import ListaTurmas from './components/ListaTurmas'
 import Mural from './components/Mural'
 import Atividades from './components/Atividades'
+import Atividade from './components/Atividade'
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
           <Route path=":id" element={<TurmaLayout />}>
             <Route index element={<Mural />} />
             <Route path="atividades" element={<Atividades />} />
+            <Route path="atividades/:id" element={<Atividade />} />
             <Route path="pessoas" element={<p>pessoas</p>} />
           </Route>
         </Route>
