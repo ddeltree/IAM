@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import useSWR from 'swr'
-import { Skeleton } from '@/components/ui/skeleton'
 import _ from 'lodash'
+import TurmaSkeletonCard from './TurmaSkeletonCard'
 
 export default function ListaTurmas() {
   const { data, error, isLoading } = useSWR('listar-turmas', listarTurmas)
@@ -11,7 +11,7 @@ export default function ListaTurmas() {
     return (
       <div className="flex w-full justify-start gap-4 p-2">
         {_.range(0, 3).map((i) => (
-          <SkeletonCard key={i} />
+          <TurmaSkeletonCard key={i} />
         ))}
       </div>
     )
@@ -32,19 +32,6 @@ export default function ListaTurmas() {
         </li>
       ))}
     </ul>
-  )
-}
-
-export function SkeletonCard() {
-  return (
-    <div className="flex h-[250px] flex-col space-y-3 rounded-xl border">
-      <Skeleton className="h-[100px] w-[250px] rounded-xl" />
-      <div className="m-4 space-y-2">
-        <Skeleton className="h-4 w-[200px]" />
-        <Skeleton className="h-4 w-[150px]" />
-        <Skeleton className="h-4 w-[75px]" />
-      </div>
-    </div>
   )
 }
 

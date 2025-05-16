@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useOutletContext } from 'react-router'
+import { Link, useOutletContext } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -27,9 +27,9 @@ export default function Mural() {
             <p className="font-semibold">Próximas atividades</p>
             <p>...</p>
           </div>
-          <div className="flex justify-end px-2 pb-4">
+          <Link className="flex justify-end px-2 pb-4" to="atividades">
             <Button variant="ghost">Ver tudo</Button>
-          </div>
+          </Link>
         </aside>
 
         <div className="flex w-full flex-col gap-4">
@@ -39,7 +39,7 @@ export default function Mural() {
                 <AvatarImage src="https://github.com/shadcn.png" />
                 <AvatarFallback>SC</AvatarFallback>
               </Avatar>
-              <div className="w-full">
+              <div className="w-full space-y-0.5">
                 <Input
                   type="text"
                   onChange={(e: any) => setTitulo(e.target.value)}
@@ -50,7 +50,7 @@ export default function Mural() {
                   onChange={(e) => setCorpo(e.target.value)}
                 />
                 <Button
-                  variant="default"
+                  variant="outline"
                   size="sm"
                   className="float-right"
                   onClick={() => {

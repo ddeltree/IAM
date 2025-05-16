@@ -28,7 +28,9 @@ export default function MainLayout() {
         )}
       >
         <div className="flex items-baseline gap-4">
-          <h1 className="font-large text-3xl">Sala de Aula</h1>
+          <Link to={'/'}>
+            <h1 className="font-large text-3xl">Sala de Aula</h1>
+          </Link>
           <h3 className="text-lg font-semibold">Turma</h3>
         </div>
         {user ? (
