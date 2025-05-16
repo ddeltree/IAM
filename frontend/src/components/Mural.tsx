@@ -7,13 +7,18 @@ import { Input } from '@/components/ui/input'
 import { useUser } from '@/providers/UserProvider'
 import useSWR from 'swr'
 import { Edit } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function Mural() {
   const turma = useOutletContext<any>()
   const { user } = useUser()
   const [titulo, setTitulo] = useState('')
   const [corpo, setCorpo] = useState('')
-  const { data } = useSWR('listar-posts', listar)
+  const [novotitulo, setNovoTitulo] = useState('')
+  const [novocorpo, setNovoCorpo] = useState('')
+  const [editando, setEditando] = useState(false)
+  const [editandoId, setEditandoId] = useState('')
+  const { data, mutate } = useSWR('listar-posts', listar)
 
   return (
     <div>
@@ -74,22 +79,61 @@ export default function Mural() {
               <div className="flex items-center justify-start">
                 <Avatar className="h-12 w-12">
                   <AvatarImage src="https://github.com/shadcn.png" />
-                  <AvatarFallback>SC</AvatarFallback>
+                  <AvatarFallback>EU</AvatarFallback>
                 </Avatar>
                 <div className="flex w-full flex-col justify-center pl-4">
-                  <p className="text-xl font-semibold">{post.titulo}</p>
+                  {editando && editandoId === post.id ? (
+                    <Input
+                      defaultValue={post.titulo}
+                      onChange={(e) => setNovoTitulo(e.target.value)}
+                    />
+                  ) : (
+                    <p className="text-xl font-semibold">{post.titulo}</p>
+                  )}
                   <p className="text-xs">{post.autor.name}</p>
                 </div>
               </div>
               <div className="w-full">
-                <div>
+                {editando && editandoId === post.id ? (
+                  <Textarea
+                    defaultValue={post.corpo}
+                    onChange={(e) => setNovoCorpo(e.target.value)}
+                  />
+                ) : (
                   <p>{post.corpo}</p>
-                </div>
+                )}
               </div>
+              {editando && editandoId === post.id && (
+                <div className="flex justify-end">
+                  <Button
+                    variant={'secondary'}
+                    onClick={() => setEditando(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      setEditando(false)
+                      await atualizar(post.id, novotitulo, novocorpo)
+                      mutate()
+                    }}
+                  >
+                    Salvar
+                  </Button>
+                </div>
+              )}
               <Edit
-                className="text-muted-foreground absolute top-4 right-4"
+                className={cn(
+                  'text-muted-foreground absolute top-4 right-4',
+                  editando && editandoId === post.id && 'hidden',
+                )}
                 size={18}
-                onClick={() => {}}
+                onClick={() => {
+                  setEditando(!editando)
+                  setEditandoId(post.id)
+                  setNovoTitulo(post.titulo)
+                  setNovoCorpo(post.corpo)
+                }}
               />
             </div>
           ))}
@@ -97,6 +141,15 @@ export default function Mural() {
       </div>
     </div>
   )
+}
+
+async function atualizar(id: string, titulo: string, corpo: string) {
+  const response = await fetch(`http://localhost:7000/posts/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ titulo, corpo }),
+  })
+  const post = await response.json()
+  return post as Record<string, any>[]
 }
 
 async function postar(
