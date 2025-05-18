@@ -56,6 +56,18 @@ public class Turma implements Resource {
     posts.add(post);
   }
 
+  public void adicionarAluno(User aluno) {
+    alunos.add(aluno);
+  }
+
+  public void removerAluno(User aluno) {
+    alunos.remove(aluno);
+  }
+
+  public boolean temAluno(User aluno) {
+    return alunos.contains(aluno);
+  }
+
   @Override
   public ResourceTypes getType() {
     return ResourceTypes.TURMA;

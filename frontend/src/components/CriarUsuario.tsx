@@ -11,7 +11,7 @@ export default function CriarUsuarios() {
   const [nome, setNome] = useState<string>('')
   const [tipo, setTipo] = useState<string>('option-aluno')
   const navigate = useNavigate()
-  const { setUser } = useUser()
+  const { user, setUser } = useUser()
 
   return (
     <TituloFrame titulo="Novo usuário">
@@ -51,8 +51,12 @@ export default function CriarUsuarios() {
         <Button
           className="justify-self-end"
           onClick={async () => {
-            if (!nome.trim() || !tipo.trim()) return
-            const usuario = await criar(nome, tipo === 'option-aluno' ? 0 : 1)
+            if (!user || !nome.trim() || !tipo.trim()) return
+            const usuario = await criar(
+              user?.id,
+              nome,
+              tipo === 'option-aluno' ? 0 : 1,
+            )
             setUser(usuario)
             navigate('/usuarios/' + usuario.id)
           }}
@@ -64,14 +68,14 @@ export default function CriarUsuarios() {
   )
 }
 
-async function criar(name: string, tipo: 0 | 1) {
+async function criar(autorId: string, name: string, tipo: 0 | 1) {
   console.log(name, tipo)
   const response = await fetch('http://localhost:7000/usuarios', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ name, tipo }),
+    body: JSON.stringify({ name, tipo, autorId }),
   })
   return response.json()
 }

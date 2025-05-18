@@ -76,12 +76,15 @@ export default function MainLayout() {
 }
 
 function UserPopover() {
-  const { data: usuarios } = useSWR('usuarios', listUsers)
-  const [usuarioId, setUsuarioId] = useState<string>()
+  const [usuarioId, setUsuarioId] = useState<string>('1')
+  const { data: usuarios, mutate } = useSWR('usuarios', () =>
+    listUsers(usuarioId),
+  )
   const { setUser } = useUser()
   useEffect(() => {
     setUser(usuarios?.find((u) => u.id === usuarioId))
-  }, [usuarioId])
+    mutate()
+  }, [usuarios, usuarioId])
   return (
     <Select value={usuarioId} onValueChange={setUsuarioId} defaultValue="">
       <SelectTrigger className="border-0">
@@ -95,11 +98,13 @@ function UserPopover() {
                 <ShieldUser />
                 <span className="text-muted-foreground text-xs">Professor</span>
               </>
-            ) : (
+            ) : u.tipo === 0 ? (
               <>
                 <CircleUserRound />
                 <span className="text-muted-foreground text-xs">Aluno</span>
               </>
+            ) : (
+              <CircleUserRound />
             )}
             {u.name}
           </SelectItem>
@@ -114,8 +119,10 @@ function UserPopover() {
   )
 }
 
-async function listUsers() {
-  const response = await fetch('http://localhost:7000/usuarios')
+export async function listUsers(uid: string, turmaId?: string | undefined) {
+  const query =
+    `?id=${uid}` + (turmaId != undefined ? `&turmaId=${turmaId}` : '')
+  const response = await fetch('http://localhost:7000/usuarios' + query)
   const users = await response.json()
   return users as Record<string, any>[]
 }

@@ -33,7 +33,7 @@ public enum Action {
   EXCLUIR_ATIVIDADE, // apenas o AUTOR (professor) ou o ADMIN
   EXCLUIR_POST, // apenas o AUTOR, o PROFESSOR ou o ADMIN
   EXCLUIR_COMENTARIO, // apenas o AUTOR, o PROFESSOR ou o ADMIN
-  EXCLUIR_USUARIO, // apenas o ADMIN
+  // EXCLUIR_USUARIO, // apenas o ADMIN
 
   // ------------------------------------------------------------------------------------
 

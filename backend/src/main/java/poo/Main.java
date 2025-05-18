@@ -6,6 +6,7 @@ import poo.api.ComentarioController;
 import poo.api.PostController;
 import poo.api.TurmaController;
 import poo.api.UserController;
+import poo.iam.SecurityContext;
 
 public class Main {
     public static void main(String[] args) {
@@ -16,7 +17,7 @@ public class Main {
                 });
             });
         }).start(7000);
-
+        SecurityContext.getInstance();
         TurmaController.register(app);
         PostController.register(app);
         AtividadeController.register(app);

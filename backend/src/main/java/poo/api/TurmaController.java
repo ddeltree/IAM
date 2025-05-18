@@ -15,6 +15,16 @@ public class TurmaController {
     return turmas.get(id);
   }
 
+  public static Turma getTurma(Context ctx) {
+    String id = ctx.pathParam("id");
+    Turma turma = turmas.get(id);
+    if (turma == null) {
+      ctx.status(404).result("Turma nao encontrada");
+      return null;
+    }
+    return turma;
+  }
+
   public static void register(Javalin app) {
     app.get("/turmas", TurmaController::listar);
     app.get("/turmas/{id}", TurmaController::ver);

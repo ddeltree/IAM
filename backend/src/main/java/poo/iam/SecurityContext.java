@@ -1,6 +1,9 @@
 package poo.iam;
 
 import java.util.List;
+
+import poo.api.UserController;
+
 import static poo.iam.SystemPermission.*;
 
 public class SecurityContext {
@@ -23,9 +26,9 @@ public class SecurityContext {
         EDITAR_POST,
         EDITAR_COMENTARIO,
         EXCLUIR_ATIVIDADE,
+        // EXCLUIR_USUARIO,
         EXCLUIR_POST,
-        EXCLUIR_COMENTARIO,
-        EXCLUIR_USUARIO);
+        EXCLUIR_COMENTARIO);
     for (SystemPermission perm : adminPermissions) {
       admin.grantPermission(perm.get());
     }
@@ -88,5 +91,26 @@ public class SecurityContext {
 
   public Group getProfessores() {
     return professores;
+  }
+
+  public boolean isProfessor(User user) {
+    return user.getGroups().contains(professores);
+  }
+
+  public boolean isProfessor(String uid) {
+    var user = UserController.getUser(uid);
+    return isProfessor(user);
+  }
+
+  public boolean isAluno(User user) {
+    return user.getGroups().contains(alunos);
+  }
+
+  public boolean isAdmin(User user) {
+    return user.getId().equals(admin.getId());
+  }
+
+  public boolean isAdmin(String uid) {
+    return uid.equals(admin.getId());
   }
 }
