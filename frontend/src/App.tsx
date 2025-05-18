@@ -1,7 +1,6 @@
 import { Route, Routes } from 'react-router'
 import MainLayout from './components/layout/MainLayout'
 import Home from './components/Home'
-import Usuarios from './components/Usuarios'
 import CriarTurma from './components/CriarTurma'
 import CriarUsuario from './components/CriarUsuario'
 import VerUsuario from './components/VerUsuario'
@@ -10,13 +9,15 @@ import ListaTurmas from './components/ListaTurmas'
 import Mural from './components/Mural'
 import Atividades from './components/Atividades'
 import Atividade from './components/Atividade'
+import ListaUsuarios from './components/Usuarios'
 
 export default function App() {
   return (
     <Routes>
       <Route element={<MainLayout />}>
         <Route index element={<Home />} />
-        <Route path="/usuarios" element={<Usuarios />}>
+        <Route path="/usuarios">
+          <Route index element={<ListaUsuarios />} />
           <Route path="criar" element={<CriarUsuario />} />
           <Route path=":id" element={<VerUsuario />} />
         </Route>

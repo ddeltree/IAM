@@ -1,39 +1,68 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
+import { Separator } from './ui/separator'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
+import { RadioGroup, RadioGroupItem } from './ui/radio-group'
+import { useUser } from '@/providers/UserProvider'
+import TituloFrame from './TituloFrame'
 
 export default function CriarUsuarios() {
   const [nome, setNome] = useState<string>('')
-  const [tipo, setTipo] = useState<string>('')
+  const [tipo, setTipo] = useState<string>('option-aluno')
   const navigate = useNavigate()
+  const { setUser } = useUser()
+
   return (
-    <div className="flex flex-col items-center border w-96 h-96 justify-center gap-4">
-      <label htmlFor="nome">
-        Nome:
-        <input
-          type="text"
-          className="border"
-          onChange={(e) => setNome(e.target.value)}
-        />
-      </label>
-      <label htmlFor="tipo">
-        Tipo:
-        <input
-          type="text"
-          className="border"
-          onChange={(e) => setTipo(e.target.value)}
-        />
-      </label>
-      <button
-        onClick={async () => {
-          if (!nome.trim() || !tipo.trim()) return
-          const usuario = await criar(nome, tipo)
-          navigate('/usuarios/' + usuario.id)
-        }}
-        className="border bg-amber-200 p-2"
-      >
-        Criar
-      </button>
-    </div>
+    <TituloFrame titulo="Novo usuário">
+      <div className="grid max-w-sm grid-cols-1 gap-2">
+        <div className="grid gap-1">
+          <Label htmlFor="nome" className="text-sm font-medium">
+            Nome
+          </Label>
+          <Input
+            id="nome"
+            type="text"
+            className="rounded border px-2 py-1"
+            onChange={(e) => setNome(e.target.value)}
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <Label htmlFor="option-aluno">Tipo</Label>
+          <RadioGroup
+            value={tipo}
+            onValueChange={(value) => {
+              console.log(value)
+              setTipo(value)
+            }}
+            defaultValue="option-aluno"
+            className="grid gap-1 rounded-lg p-2"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="option-aluno" id="option-aluno" />
+              <Label htmlFor="option-aluno">Aluno</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="option-professor" id="option-professor" />
+              <Label htmlFor="option-professor">Professor</Label>
+            </div>
+          </RadioGroup>
+        </div>
+        <Button
+          className="justify-self-end"
+          onClick={async () => {
+            if (!nome.trim() || !tipo.trim()) return
+            const usuario = await criar(nome, tipo)
+            setUser(usuario)
+            navigate('/usuarios/' + usuario.id)
+          }}
+        >
+          Criar
+        </Button>
+      </div>
+    </TituloFrame>
   )
 }
 

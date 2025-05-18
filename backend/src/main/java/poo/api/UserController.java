@@ -68,7 +68,7 @@ public class UserController {
   public static class UserDTO {
     public String id;
     public String name;
-    public String tipo;
+    public int tipo = 0; // 0 = aluno, 1 = professor
   }
 
   private static UserDTO toDTO(User user) {

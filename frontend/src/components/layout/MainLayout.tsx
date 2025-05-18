@@ -1,9 +1,18 @@
 import { Link, Outlet } from 'react-router'
 import { useUser } from '../../providers/UserProvider'
 import { cn } from '../../lib/utils'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import useSWR from 'swr'
+import { useEffect, useState } from 'react'
+import { ShieldUser, CircleUserRound } from 'lucide-react'
 
 export default function MainLayout() {
-  const { user } = useUser()
   const headerHeight = '44px' // 16 * 4 = 64px
   const sidebarWidth = '192px' // 48 * 4 = 192px
   const margin = '16px' // 4 * 4 = 16px outer margin
@@ -33,15 +42,7 @@ export default function MainLayout() {
           </Link>
           <h3 className="text-lg font-semibold">Turma</h3>
         </div>
-        {user ? (
-          <div>
-            Usuário: <b className="font-black">{user.name}</b>
-          </div>
-        ) : (
-          <Link to="/usuarios">
-            <div>Usuário não escolhido</div>
-          </Link>
-        )}
+        <UserPopover />
       </div>
 
       {/* Fixed Sidebar */}
@@ -55,7 +56,7 @@ export default function MainLayout() {
           'bg-background text-base',
         )}
       >
-        a
+        Sidebar
       </div>
 
       <div
@@ -65,10 +66,40 @@ export default function MainLayout() {
           'flex justify-center',
         )}
       >
-        <div className="flex w-full max-w-5xl flex-col items-center">
+        <div className="w-full max-w-5xl py-4">
           <Outlet />
         </div>
       </div>
     </div>
   )
+}
+
+function UserPopover() {
+  const { data: usuarios, error, isLoading } = useSWR('usuarios', listUsers)
+  const [usuarioId, setUsuarioId] = useState<string>()
+  const { setUser } = useUser()
+  useEffect(() => {
+    setUser(usuarios?.find((u) => u.id === usuarioId))
+  }, [usuarioId])
+  return (
+    <Select value={usuarioId} onValueChange={setUsuarioId}>
+      <SelectTrigger className="border-0">
+        <SelectValue placeholder="Selecionar usuário" />
+      </SelectTrigger>
+      <SelectContent>
+        {usuarios?.map((u) => (
+          <SelectItem key={u.id} value={u.id} className="">
+            {u.type === 'professor' ? <ShieldUser /> : <CircleUserRound />}
+            {u.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
+async function listUsers() {
+  const response = await fetch('http://localhost:7000/usuarios')
+  const users = await response.json()
+  return users as Record<string, any>[]
 }
