@@ -4,7 +4,6 @@ import { useUser } from '../providers/UserProvider'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
-import { Separator } from './ui/separator'
 import TituloFrame from './TituloFrame'
 
 export default function CriarTurma() {
@@ -20,9 +19,9 @@ export default function CriarTurma() {
         </Label>
         <Button
           className="self-end"
-          onClick={() => {
+          onClick={async () => {
             if (!nome.trim() || !user) return
-            criar(nome, user.id)
+            await criar(nome, user.id)
             navigate('/')
           }}
         >

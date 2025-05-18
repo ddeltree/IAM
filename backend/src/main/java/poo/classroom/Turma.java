@@ -6,6 +6,7 @@ import java.util.List;
 
 import poo.iam.User;
 import poo.iam.resources.Resource;
+import poo.iam.resources.ResourceTypes;
 
 public class Turma implements Resource {
   private static long proximoId = 1; // contador global
@@ -56,7 +57,7 @@ public class Turma implements Resource {
   }
 
   @Override
-  public String getType() {
-    return "turma";
+  public ResourceTypes getType() {
+    return ResourceTypes.TURMA;
   }
 }

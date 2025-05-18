@@ -27,7 +27,7 @@ export default function ListaTurmas() {
         </ul>
       )}
       <Separator className="my-4" />
-      <Link to="/turmas/criar">
+      <Link to="/turmas">
         <Button>Nova turma</Button>
       </Link>
     </>

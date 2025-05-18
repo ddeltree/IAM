@@ -11,6 +11,7 @@ import {
 import useSWR from 'swr'
 import { useEffect, useState } from 'react'
 import { ShieldUser, CircleUserRound } from 'lucide-react'
+import { Button } from '../ui/button'
 
 export default function MainLayout() {
   const headerHeight = '44px' // 16 * 4 = 64px
@@ -75,24 +76,39 @@ export default function MainLayout() {
 }
 
 function UserPopover() {
-  const { data: usuarios, error, isLoading } = useSWR('usuarios', listUsers)
+  const { data: usuarios } = useSWR('usuarios', listUsers)
   const [usuarioId, setUsuarioId] = useState<string>()
   const { setUser } = useUser()
   useEffect(() => {
     setUser(usuarios?.find((u) => u.id === usuarioId))
   }, [usuarioId])
   return (
-    <Select value={usuarioId} onValueChange={setUsuarioId}>
+    <Select value={usuarioId} onValueChange={setUsuarioId} defaultValue="">
       <SelectTrigger className="border-0">
         <SelectValue placeholder="Selecionar usuário" />
       </SelectTrigger>
       <SelectContent>
         {usuarios?.map((u) => (
-          <SelectItem key={u.id} value={u.id} className="">
-            {u.type === 'professor' ? <ShieldUser /> : <CircleUserRound />}
+          <SelectItem key={u.id} value={u.id}>
+            {u.tipo === 1 ? (
+              <>
+                <ShieldUser />
+                <span className="text-muted-foreground text-xs">Professor</span>
+              </>
+            ) : (
+              <>
+                <CircleUserRound />
+                <span className="text-muted-foreground text-xs">Aluno</span>
+              </>
+            )}
             {u.name}
           </SelectItem>
         ))}
+        <Link to={'/usuarios'}>
+          <Button variant="outline" size="icon" className="w-full">
+            Novo
+          </Button>
+        </Link>
       </SelectContent>
     </Select>
   )

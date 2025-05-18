@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Separator } from './ui/separator'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
@@ -34,7 +33,6 @@ export default function CriarUsuarios() {
           <RadioGroup
             value={tipo}
             onValueChange={(value) => {
-              console.log(value)
               setTipo(value)
             }}
             defaultValue="option-aluno"
@@ -54,7 +52,7 @@ export default function CriarUsuarios() {
           className="justify-self-end"
           onClick={async () => {
             if (!nome.trim() || !tipo.trim()) return
-            const usuario = await criar(nome, tipo)
+            const usuario = await criar(nome, tipo === 'option-aluno' ? 0 : 1)
             setUser(usuario)
             navigate('/usuarios/' + usuario.id)
           }}
@@ -66,7 +64,8 @@ export default function CriarUsuarios() {
   )
 }
 
-async function criar(name: string, tipo: string) {
+async function criar(name: string, tipo: 0 | 1) {
+  console.log(name, tipo)
   const response = await fetch('http://localhost:7000/usuarios', {
     method: 'POST',
     headers: {

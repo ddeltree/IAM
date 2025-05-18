@@ -2,6 +2,8 @@ package poo.api;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import poo.iam.MembershipManager;
+import poo.iam.SecurityContext;
 import poo.iam.User;
 
 import java.util.*;
@@ -39,6 +41,8 @@ public class UserController {
   private static void criar(Context ctx) {
     UserDTO dto = ctx.bodyAsClass(UserDTO.class);
     User user = new User(dto.name);
+    var auth = SecurityContext.getInstance();
+    MembershipManager.link(user, dto.tipo == 1 ? auth.getProfessores() : auth.getAlunos());
     usuarios.put(user.getId(), user);
     ctx.status(201).json(toDTO(user));
   }
@@ -75,6 +79,7 @@ public class UserController {
     UserDTO dto = new UserDTO();
     dto.id = user.getId();
     dto.name = user.getName();
+    dto.tipo = user.getGroups().contains(SecurityContext.getInstance().getProfessores()) ? 1 : 0;
     return dto;
   }
 }
