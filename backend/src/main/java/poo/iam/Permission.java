@@ -3,22 +3,24 @@ package poo.iam;
 import java.util.Objects;
 
 import poo.iam.resources.Resource;
+import poo.iam.resources.ResourceTypes;
 
 public class Permission {
   private Action action;
-  private Resource resource;
+  private ResourceTypes resource;
+
+  public Permission(Action action, ResourceTypes resourceType) {
+    this.action = action;
+    this.resource = resourceType;
+  }
 
   public Permission(Action action, Resource resource) {
     this.action = action;
-    this.resource = resource;
+    this.resource = resource.getType();
   }
 
   public Action getAction() {
     return action;
-  }
-
-  public Resource getResource() {
-    return resource;
   }
 
   @Override
@@ -28,16 +30,16 @@ public class Permission {
     if (!(o instanceof Permission))
       return false;
     Permission that = (Permission) o;
-    return action == that.action && resource.getType().equals(that.resource.getType());
+    return action == that.action && resource == that.resource;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(action, resource.getType());
+    return Objects.hash(action, resource);
   }
 
   @Override
   public String toString() {
-    return action + ":" + resource.getType();
+    return action + ":" + resource;
   }
 }

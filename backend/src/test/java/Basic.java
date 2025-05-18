@@ -12,7 +12,7 @@ public class Basic {
   @Test
   public void testSoma() {
     var documento = new Document();
-    var documento2 = ResourceFactory.createResource(ResourceTypes.DOCUMENT); // equivalente ao de cima
+    var documento2 = ResourceFactory.createResource(ResourceTypes.TURMA); // equivalente ao de cima
 
     // CRIANDO PERMISSÕES -- permissão é uma ação sobre um recurso
     var poderVerDocumento = new Permission(Action.VIEW, documento);
