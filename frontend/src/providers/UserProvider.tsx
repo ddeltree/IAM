@@ -1,5 +1,6 @@
 import React, {
   createContext,
+  useEffect,
   useState,
   type Dispatch,
   type ReactNode,
@@ -19,6 +20,12 @@ const ThemeContext = createContext<{
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<Value>()
+  useEffect(() => {
+    const valor = sessionStorage.getItem('usuario')
+    if (valor) {
+      setUser(JSON.parse(valor))
+    }
+  }, [])
   return (
     <ThemeContext.Provider value={{ user, setUser }}>
       {children}

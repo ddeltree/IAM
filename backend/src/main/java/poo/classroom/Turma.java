@@ -30,7 +30,9 @@ public class Turma implements Resource {
     return professor;
   }
 
-  public List<User> getAlunos() {
+  public List<User> getParticipantes() {
+    var res = new ArrayList<User>(alunos);
+    res.add(professor);
     return alunos;
   }
 

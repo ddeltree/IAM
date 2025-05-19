@@ -4,6 +4,7 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import poo.iam.MembershipManager;
 import poo.iam.SecurityContext;
+import poo.iam.SystemPermission;
 import poo.iam.User;
 
 import java.util.*;
@@ -16,66 +17,53 @@ public class UserController {
     return usuarios.get(id);
   }
 
-  private static User getUser(Context ctx) {
-    String id = ctx.pathParam("id");
-    User user = usuarios.get(id);
-    if (user == null) {
-      ctx.status(404).result("Usuário não encontrado");
-      return null;
-    }
-    return user;
-  }
-
   public static void register(Javalin app) {
-    app.get("/usuarios", UserController::listar);
-    app.get("/usuarios/{id}", UserController::ver);
-    app.post("/usuarios", UserController::criar);
+    app.get("/usuarios", UserController::listarUsuarios);
+    app.get("/usuarios/{id}", UserController::verPerfil);
+    app.post("/usuarios", UserController::novoUsuario);
     // app.put("/usuarios/{id}", UserController::atualizar);
     // app.delete("/usuarios/{id}", UserController::excluir);
   }
 
-  private static void listar(Context ctx) {
-    var admin = SecurityContext.getInstance().getAdmin();
-    var uid = ctx.queryParam("id");
-    var tid = ctx.queryParam("turmaId");
-    var turma = Utils.isAdmin(uid) ? null : TurmaController.getTurma(tid);
-    if (!Utils.isAdmin(uid) && !Utils.isParticipante(uid, tid)) {
-      ctx.status(403).result("Não autorizado");
+  /** apenas o ADMIN pode listar todos os usuarios */
+  private static void listarUsuarios(Context ctx) {
+    if (!Utils.hasPermissionOr403(SystemPermission.LISTAR_USUARIOS, ctx))
       return;
-    }
-    if (!Utils.isAdmin(uid)) {
-      ctx.json(turma.getAlunos().stream().map(UserController::toDTO).toList());
-      return;
-    }
-    List<User> users = new ArrayList<>(usuarios.values());
-    users.add(admin);
-    ctx.json(users.stream().map(UserController::toDTO).toList());
+    ctx.json(usuarios.values().stream().map(UserController::toDTO).toList());
   }
 
-  private static void ver(Context ctx) {
-    var user = getUser(ctx);
+  /** apenas o próprio USUÁRIO pode ver seu perfil */
+  private static void verPerfil(Context ctx) {
+    if (!Utils.hasPermissionOr403(SystemPermission.VER_PERFIL, ctx))
+      return;
+    var user = Utils.findUserOr404(ctx);
     ctx.json(toDTO(user));
   }
 
-  private static void criar(Context ctx) {
+  /**
+   * Apenas o ADMIN pode criar professores (tipo 1);
+   * apenas o PROFESSOR pode criar alunos (tipo 0)
+   */
+  private static void novoUsuario(Context ctx) {
     UserDTO dto = ctx.bodyAsClass(UserDTO.class);
-    var autorId = dto.autorId;
+    switch (dto.tipo) {
+      case 0:
+        if (!Utils.hasPermissionOr403(SystemPermission.CRIAR_ALUNO, ctx))
+          return;
+        break;
+      case 1:
+        if (!Utils.hasPermissionOr403(SystemPermission.CRIAR_PROFESSOR, ctx))
+          return;
+        break;
+      default:
+        ctx.status(400).result("Tipo inválido");
+        return;
+    }
     var auth = SecurityContext.getInstance();
-    if (dto.tipo == 1 && auth.isAdmin(autorId) || dto.tipo == 0 && auth.isProfessor(autorId)) {
-      User novoUsuario = new User(dto.name);
-      MembershipManager.link(novoUsuario, dto.tipo == 1 ? auth.getProfessores() : auth.getAlunos());
-      usuarios.put(novoUsuario.getId(), novoUsuario);
-      ctx.status(201).json(toDTO(novoUsuario));
-      return;
-    }
-    String err;
-    if (dto.tipo == 1) {
-      err = "Apenas o ADMIN pode criar professores";
-    } else {
-      err = "Apenas o PROFESSOR pode criar alunos";
-    }
-    ctx.status(403).result("Não autorizado: " + err);
-    return;
+    User novoUsuario = new User(dto.name);
+    MembershipManager.link(novoUsuario, dto.tipo == 1 ? auth.getProfessores() : auth.getAlunos());
+    usuarios.put(novoUsuario.getId(), novoUsuario);
+    ctx.status(201).json(toDTO(novoUsuario));
   }
 
   // private static void atualizar(Context ctx) {
