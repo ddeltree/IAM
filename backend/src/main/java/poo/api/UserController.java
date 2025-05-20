@@ -21,18 +21,16 @@ public class UserController {
     app.get("/usuarios", UserController::listarUsuarios);
     app.get("/usuarios/{id}", UserController::verPerfil);
     app.post("/usuarios", UserController::novoUsuario);
-    // app.put("/usuarios/{id}", UserController::atualizar);
-    // app.delete("/usuarios/{id}", UserController::excluir);
+    app.put("/usuarios/{id}", UserController::atualizarNome);
+    app.delete("/usuarios/{id}", UserController::excluirUsuario);
   }
 
-  /** apenas o ADMIN pode listar todos os usuarios */
   private static void listarUsuarios(Context ctx) {
     if (!Utils.hasPermissionOr403(SystemPermission.LISTAR_USUARIOS, ctx))
       return;
     ctx.json(usuarios.values().stream().map(UserController::toDTO).toList());
   }
 
-  /** apenas o próprio USUÁRIO pode ver seu perfil */
   private static void verPerfil(Context ctx) {
     if (!Utils.hasPermissionOr403(SystemPermission.VER_PERFIL, ctx))
       return;
@@ -40,10 +38,6 @@ public class UserController {
     ctx.json(toDTO(user));
   }
 
-  /**
-   * Apenas o ADMIN pode criar professores (tipo 1);
-   * apenas o PROFESSOR pode criar alunos (tipo 0)
-   */
   private static void novoUsuario(Context ctx) {
     UserDTO dto = ctx.bodyAsClass(UserDTO.class);
     switch (dto.tipo) {
@@ -66,19 +60,27 @@ public class UserController {
     ctx.status(201).json(toDTO(novoUsuario));
   }
 
-  // private static void atualizar(Context ctx) {
-  // var user = getUser(ctx);
-  // UserDTO dto = ctx.bodyAsClass(UserDTO.class);
-  // user.setName(dto.name);
-  // ctx.status(200).json(toDTO(user));
-  // }
+  private static void atualizarNome(Context ctx) {
+    if (!Utils.hasPermissionOr403(SystemPermission.EDITAR_USUARIO, ctx))
+      return;
+    var user = Utils.findUserOr404(ctx);
+    if (!user.getId().equals(ctx.pathParam("id")))
+      return;
+    UserDTO dto = ctx.bodyAsClass(UserDTO.class);
+    user.setName(dto.name);
+    ctx.status(200).json(toDTO(user));
+  }
 
-  // private static void excluir(Context ctx) {
-  // var user = getUser(ctx);
-  // Utils.isAdmin(ctx.)
-  // usuarios.remove(user.getId());
-  // ctx.status(204);
-  // }
+  private static void excluirUsuario(Context ctx) {
+    if (!Utils.hasPermissionOr403(SystemPermission.EXCLUIR_USUARIO, ctx))
+      return;
+    var authUser = Utils.findUserOr404(ctx);
+    var targetUser = getUser(ctx.pathParam("id"));
+    if (!authUser.equals(targetUser) && !Utils.isAdmin(authUser.getId()))
+      return;
+    usuarios.remove(targetUser.getId());
+    ctx.status(204);
+  }
 
   // DTO para serialização e entrada de dados
   public static class UserDTO {

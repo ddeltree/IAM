@@ -70,8 +70,27 @@ public class Turma implements Resource {
     return alunos.contains(aluno);
   }
 
+  public boolean temAluno(String uid) {
+    return alunos.stream().anyMatch(aluno -> aluno.getId().equals(uid));
+  }
+
   @Override
   public ResourceTypes getType() {
     return ResourceTypes.TURMA;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (!(o instanceof Turma))
+      return false;
+    Turma turma = (Turma) o;
+    return id.equals(turma.getId());
+  }
+
+  @Override
+  public int hashCode() {
+    return id.hashCode();
   }
 }

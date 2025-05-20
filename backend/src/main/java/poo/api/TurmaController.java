@@ -41,23 +41,22 @@ public class TurmaController {
   }
 
   private static void listarTurmas(Context ctx) {
-    var auth = SecurityContext.getInstance();
-    var uid = ctx.queryParam("id");
-    if (Utils.isAdmin(uid)) {
-      ctx.json(turmas.values());
-      return;
-    } else if (auth.isProfessor(uid)) {
-      var professor = UserController.getUser(uid);
-      var turmasProf = TurmaController.turmas.values().stream()
-          .filter(turma -> turma.getProfessorResponsavel().equals(professor)).collect(Collectors.toList());
-      ctx.json(turmasProf);
-      return;
-    } else {
-      var user = UserController.getUser(uid);
-      List<Turma> turmasAluno = TurmaController.turmas.values().stream().filter(turma -> turma.temAluno(user))
+    var uid = ctx.cookie("uid");
+    List<Turma> result = new ArrayList<>();
+    var turmas$ = turmas.values().stream();
+    var isAdmin = Utils.hasPermissionOr403(SystemPermission.LISTAR_TURMAS_ADM, ctx);
+    var isProfessor = Utils.hasPermissionOr403(SystemPermission.LISTAR_TURMAS_PROFESSOR, ctx);
+    var isAluno = Utils.hasPermissionOr403(SystemPermission.LISTAR_TURMAS_ALUNO, ctx);
+    if (isAdmin) {
+      result = turmas$.toList();
+    } else if (isProfessor) {
+      result = turmas$
+          .filter(turma -> turma.getProfessorResponsavel().getId().equals(uid)).collect(Collectors.toList());
+    } else if (isAluno) {
+      result = turmas$.filter(turma -> turma.temAluno(uid))
           .collect(Collectors.toList());
-      ctx.json(turmasAluno);
     }
+    ctx.json(result);
   }
 
   private static void listarParticipantes(Context ctx) {
@@ -69,8 +68,13 @@ public class TurmaController {
   }
 
   private static void verTurma(Context ctx) {
-    String id = ctx.pathParam("id");
-    Turma turma = turmas.get(id);
+    var isAdmin = Utils.hasPermissionOr403(SystemPermission.LISTAR_TURMAS_ADM, ctx);
+    var uid = ctx.cookie("uid");
+    var turmaId = ctx.pathParam("id");
+    var isParticipante = Participante.isParticipante(uid, turmaId);
+    if (!isAdmin && !isParticipante)
+      return;
+    Turma turma = turmas.get(turmaId);
     if (turma == null) {
       ctx.status(404).result("Turma não encontrada");
       return;
@@ -79,6 +83,8 @@ public class TurmaController {
   }
 
   private static void criarTurma(Context ctx) {
+    if (!Utils.hasPermissionOr403(SystemPermission.CRIAR_TURMA, ctx))
+      return;
     TurmaDTO dto = ctx.bodyAsClass(TurmaDTO.class);
     User professor = UserController.getUser(dto.professorId);
     if (professor == null) {
@@ -91,8 +97,10 @@ public class TurmaController {
   }
 
   private static void atualizarTurma(Context ctx) {
-    String id = ctx.pathParam("id");
-    Turma turma = turmas.get(id);
+    if (!Utils.hasPermissionOr403(SystemPermission.EDITAR_TURMA, ctx))
+      return;
+    var idTurma = ctx.pathParam("id");
+    Turma turma = turmas.get(idTurma);
     if (turma == null) {
       ctx.status(404).result("Turma não encontrada");
       return;
@@ -103,7 +111,9 @@ public class TurmaController {
   }
 
   private static void excluirTurma(Context ctx) {
-    String id = ctx.pathParam("id");
+    if (!Utils.hasPermissionOr403(SystemPermission.EXCLUIR_TURMA, ctx))
+      return;
+    var id = ctx.pathParam("id");
     if (turmas.remove(id) == null) {
       ctx.status(404).result("Turma não encontrada");
     } else {
@@ -127,5 +137,18 @@ public class TurmaController {
       this.userId = user.getId();
       this.name = user.getName();
     }
+
+    public static boolean isParticipante(String uid, String turmaId) {
+      var turma = TurmaController.getTurma(turmaId);
+      var auth = SecurityContext.getInstance();
+      var user = UserController.getUser(uid);
+      if (turma == null || user == null)
+        return false;
+      var isAutorTurma = auth.isProfessor(user)
+          && turma.getProfessorResponsavel().getId().equals(user.getId());
+      var isAlunoTurma = auth.isAluno(user) && turma.temAluno(user);
+      return isAutorTurma || isAlunoTurma;
+    }
+
   }
 }
