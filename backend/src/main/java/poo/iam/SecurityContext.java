@@ -21,12 +21,13 @@ public class SecurityContext {
         LISTAR_POSTS,
         LISTAR_COMENTARIOS,
         LISTAR_PARTICIPANTES,
+        LISTAR_USUARIOS,
         CRIAR_PROFESSOR,
         EDITAR_ATIVIDADE,
         EDITAR_POST,
         EDITAR_COMENTARIO,
         EXCLUIR_ATIVIDADE,
-        // EXCLUIR_USUARIO,
+        EXCLUIR_USUARIO,
         EXCLUIR_POST,
         EXCLUIR_COMENTARIO);
     for (SystemPermission perm : adminPermissions) {
@@ -45,6 +46,8 @@ public class SecurityContext {
         CRIAR_COMENTARIO,
         EDITAR_POST,
         EDITAR_COMENTARIO,
+        EDITAR_USUARIO,
+        EXCLUIR_USUARIO,
         EXCLUIR_POST,
         EXCLUIR_COMENTARIO);
     for (SystemPermission perm : alunosPermissions) {
@@ -67,11 +70,13 @@ public class SecurityContext {
         EDITAR_TURMA,
         EDITAR_ATIVIDADE,
         EDITAR_POST,
+        EDITAR_USUARIO,
         EDITAR_COMENTARIO,
         EXCLUIR_TURMA,
         EXCLUIR_ATIVIDADE,
         EXCLUIR_POST,
         EXCLUIR_COMENTARIO,
+        EXCLUIR_USUARIO,
         MATRICULAR_ALUNO,
         DESMATRICULAR_ALUNO);
     for (SystemPermission perm : professoresPermissions) {

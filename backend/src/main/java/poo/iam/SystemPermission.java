@@ -11,98 +11,98 @@ import poo.iam.resources.Resource;
 import poo.iam.resources.ResourceTypes;
 
 public enum SystemPermission {
-  LISTAR_TURMAS_ADM(Action.LISTAR, ResourceTypes.TURMA),
-  LISTAR_TURMAS_PROFESSOR(Action.LISTAR, ResourceTypes.TURMA, (user, resource, __) -> {
+  LISTAR_TURMAS_ADM(Action.LISTAR_TURMAS_ADM, ResourceTypes.TURMA),
+  LISTAR_TURMAS_PROFESSOR(Action.LISTAR_TURMAS_PROFESSOR, ResourceTypes.TURMA, (user, resource, __) -> {
     var turma = (Turma) resource;
     return turma.getProfessorResponsavel().equals(user);
   }),
 
-  LISTAR_TURMAS_ALUNO(Action.LISTAR, ResourceTypes.TURMA, (user, resource, ___) -> {
+  LISTAR_TURMAS_ALUNO(Action.LISTAR_TURMAS_ALUNO, ResourceTypes.TURMA, (user, resource, ___) -> {
     var turma = (Turma) resource;
     return turma.temAluno(user.getId());
   }),
 
-  LISTAR_ATIVIDADES(Action.LISTAR, ResourceTypes.ATIVIDADE, (user, turma, __) -> {
+  LISTAR_ATIVIDADES(Action.LISTAR_ATIVIDADES, ResourceTypes.ATIVIDADE, (user, turma, __) -> {
     return isAdminOrParticipante(user, turma);
   }),
-  LISTAR_POSTS(Action.LISTAR, ResourceTypes.POST, (user, turma, __) -> {
+  LISTAR_POSTS(Action.LISTAR_POSTS, ResourceTypes.POST, (user, turma, __) -> {
     return isAdminOrParticipante(user, turma);
   }),
-  LISTAR_COMENTARIOS(Action.LISTAR, ResourceTypes.COMENTARIO, (user, turma, __) -> {
+  LISTAR_COMENTARIOS(Action.LISTAR_COMENTARIOS, ResourceTypes.COMENTARIO, (user, turma, __) -> {
     return isAdminOrParticipante(user, turma);
   }),
 
-  LISTAR_PARTICIPANTES(Action.LISTAR, ResourceTypes.USUARIO, (user, resource, __) -> {
+  LISTAR_PARTICIPANTES(Action.LISTAR_PARTICIPANTES, ResourceTypes.USUARIO, (user, resource, __) -> {
     var turma = (Turma) resource;
     var isAdmin = Utils.isAdmin(user.getId());
     var isParticipante = Participante.isParticipante(user.getId(), turma.getId());
     return isAdmin || isParticipante;
   }),
-  LISTAR_USUARIOS(Action.LISTAR, ResourceTypes.USUARIO),
-  VER_PERFIL(Action.VER, ResourceTypes.USUARIO, (user, resource, __) -> {
+  LISTAR_USUARIOS(Action.LISTAR_USUARIOS, ResourceTypes.USUARIO),
+  VER_PERFIL(Action.VER_PERFIL, ResourceTypes.USUARIO, (user, resource, __) -> {
     User profileOwner = (User) resource;
     return user.equals(profileOwner);
   }),
 
-  CRIAR_TURMA(Action.CRIAR, ResourceTypes.TURMA),
-  CRIAR_ATIVIDADE(Action.CRIAR, ResourceTypes.ATIVIDADE, (user, turma, __) -> {
+  CRIAR_TURMA(Action.CRIAR_TURMA, ResourceTypes.TURMA),
+  CRIAR_ATIVIDADE(Action.CRIAR_ATIVIDADE, ResourceTypes.ATIVIDADE, (user, turma, __) -> {
     return isProfessorResponsavel(user, turma);
   }),
-  CRIAR_POST(Action.CRIAR, ResourceTypes.POST, (user, turma, __) -> {
+  CRIAR_POST(Action.CRIAR_POST, ResourceTypes.POST, (user, turma, __) -> {
     return isParticipante(user, turma);
   }),
-  CRIAR_COMENTARIO(Action.CRIAR, ResourceTypes.COMENTARIO, (user, turma, __) -> {
+  CRIAR_COMENTARIO(Action.CRIAR_COMENTARIO, ResourceTypes.COMENTARIO, (user, turma, __) -> {
     return isParticipante(user, turma);
   }),
-  CRIAR_PROFESSOR(Action.CRIAR, ResourceTypes.USUARIO),
-  CRIAR_ALUNO(Action.CRIAR, ResourceTypes.USUARIO),
+  CRIAR_PROFESSOR(Action.CRIAR_PROFESSOR, ResourceTypes.USUARIO),
+  CRIAR_ALUNO(Action.CRIAR_ALUNO, ResourceTypes.USUARIO),
 
-  EDITAR_TURMA(Action.EDITAR, ResourceTypes.TURMA, (user, turma, __) -> {
+  EDITAR_TURMA(Action.EDITAR_TURMA, ResourceTypes.TURMA, (user, turma, __) -> {
     return isProfessorResponsavel(user, turma);
   }),
-  EDITAR_ATIVIDADE(Action.EDITAR, ResourceTypes.ATIVIDADE, (user, resource, __) -> {
+  EDITAR_ATIVIDADE(Action.EDITAR_ATIVIDADE, ResourceTypes.ATIVIDADE, (user, resource, __) -> {
     var atividade = (Atividade) resource;
     var isAdmin = Utils.isAdmin(user.getId());
     return isAdmin || isProfessorResponsavel(user, atividade.getTurma());
   }),
-  EDITAR_POST(Action.EDITAR, ResourceTypes.POST, (user, resource, __) -> {
+  EDITAR_POST(Action.EDITAR_POST, ResourceTypes.POST, (user, resource, __) -> {
     var post = (Post) resource;
     return Utils.isAdmin(user.getId()) || user.equals(post.getAutor());
   }),
-  EDITAR_COMENTARIO(Action.EDITAR, ResourceTypes.COMENTARIO, (user, resource, __) -> {
+  EDITAR_COMENTARIO(Action.EDITAR_COMENTARIO, ResourceTypes.COMENTARIO, (user, resource, __) -> {
     var comentario = (Comentario) resource;
     return Utils.isAdmin(user.getId()) || user.equals(comentario.getAutor());
   }),
-  EDITAR_USUARIO(Action.EDITAR, ResourceTypes.USUARIO, (user, resource, __) -> {
+  EDITAR_USUARIO(Action.EDITAR_USUARIO, ResourceTypes.USUARIO, (user, resource, __) -> {
     User profileOwner = (User) resource;
     return user.equals(profileOwner);
   }),
 
-  EXCLUIR_TURMA(Action.EXCLUIR, ResourceTypes.TURMA, (user, resource, __) -> {
+  EXCLUIR_TURMA(Action.EXCLUIR_TURMA, ResourceTypes.TURMA, (user, resource, __) -> {
     var turma = (Turma) resource;
     return isProfessorResponsavel(user, turma);
   }),
-  EXCLUIR_ATIVIDADE(Action.EXCLUIR, ResourceTypes.ATIVIDADE, (user, resource, __) -> {
+  EXCLUIR_ATIVIDADE(Action.EXCLUIR_ATIVIDADE, ResourceTypes.ATIVIDADE, (user, resource, __) -> {
     return Utils.isAdmin(user) || isAutor(user, resource);
   }),
-  EXCLUIR_POST(Action.EXCLUIR, ResourceTypes.POST, (user, resource, __) -> {
+  EXCLUIR_POST(Action.EXCLUIR_POST, ResourceTypes.POST, (user, resource, __) -> {
     var post = (Post) resource;
     var isProf = post.getTurma().getProfessorResponsavel().equals(user);
     return Utils.isAdmin(user) || isProf || isAutor(user, resource);
   }),
-  EXCLUIR_COMENTARIO(Action.EXCLUIR, ResourceTypes.COMENTARIO, (user, resource, __) -> {
+  EXCLUIR_COMENTARIO(Action.EXCLUIR_COMENTARIO, ResourceTypes.COMENTARIO, (user, resource, __) -> {
     var comentario = (Comentario) resource;
     var isProf = comentario.getPost().getTurma().getProfessorResponsavel().equals(user);
     return Utils.isAdmin(user) || isProf || isAutor(user, comentario);
   }),
   // apenas o ADMIN e o próprio USUÁRIO
-  EXCLUIR_USUARIO(Action.EXCLUIR, ResourceTypes.USUARIO, (user, resource, __) -> {
+  EXCLUIR_USUARIO(Action.EXCLUIR_USUARIO, ResourceTypes.USUARIO, (user, resource, __) -> {
     User profileOwner = (User) resource;
     return Utils.isAdmin(user) || user.equals(profileOwner);
   }),
 
-  MATRICULAR_ALUNO(Action.MATRICULAR, ResourceTypes.USUARIO),
-  DESMATRICULAR_ALUNO(Action.MATRICULAR, ResourceTypes.USUARIO, (user, turma, __) -> {
+  MATRICULAR_ALUNO(Action.MATRICULAR_ALUNO, ResourceTypes.USUARIO),
+  DESMATRICULAR_ALUNO(Action.DESMATRICULAR_ALUNO, ResourceTypes.USUARIO, (user, turma, __) -> {
     return isProfessorResponsavel(user, turma);
   });
 
