@@ -44,9 +44,9 @@ public class TurmaController {
     var uid = ctx.cookie("uid");
     List<Turma> result = new ArrayList<>();
     var turmas$ = turmas.values().stream();
-    var isAdmin = Utils.hasPermissionOr403(SystemPermission.LISTAR_TURMAS_ADM, ctx);
-    var isProfessor = Utils.hasPermissionOr403(SystemPermission.LISTAR_TURMAS_PROFESSOR, ctx);
-    var isAluno = Utils.hasPermissionOr403(SystemPermission.LISTAR_TURMAS_ALUNO, ctx);
+    var isAdmin = Utils.hasPermissionOrThrow(SystemPermission.LISTAR_TURMAS_ADM, ctx);
+    var isProfessor = Utils.hasPermissionOrThrow(SystemPermission.LISTAR_TURMAS_PROFESSOR, ctx);
+    var isAluno = Utils.hasPermissionOrThrow(SystemPermission.LISTAR_TURMAS_ALUNO, ctx);
     if (isAdmin) {
       result = turmas$.toList();
     } else if (isProfessor) {
@@ -60,7 +60,7 @@ public class TurmaController {
   }
 
   private static void listarParticipantes(Context ctx) {
-    if (!Utils.hasPermissionOr403(SystemPermission.LISTAR_PARTICIPANTES, ctx))
+    if (!Utils.hasPermissionOrThrow(SystemPermission.LISTAR_PARTICIPANTES, ctx))
       return;
     var turma = turmas.get(ctx.pathParam("id"));
     var participantes = turma.getParticipantes();
@@ -68,7 +68,7 @@ public class TurmaController {
   }
 
   private static void verTurma(Context ctx) {
-    var isAdmin = Utils.hasPermissionOr403(SystemPermission.LISTAR_TURMAS_ADM, ctx);
+    var isAdmin = Utils.hasPermissionOrThrow(SystemPermission.LISTAR_TURMAS_ADM, ctx);
     var uid = ctx.cookie("uid");
     var turmaId = ctx.pathParam("id");
     var isParticipante = Participante.isParticipante(uid, turmaId);
@@ -83,7 +83,7 @@ public class TurmaController {
   }
 
   private static void criarTurma(Context ctx) {
-    if (!Utils.hasPermissionOr403(SystemPermission.CRIAR_TURMA, ctx))
+    if (!Utils.hasPermissionOrThrow(SystemPermission.CRIAR_TURMA, ctx))
       return;
     TurmaDTO dto = ctx.bodyAsClass(TurmaDTO.class);
     User professor = UserController.getUser(dto.professorId);
@@ -97,7 +97,7 @@ public class TurmaController {
   }
 
   private static void atualizarTurma(Context ctx) {
-    if (!Utils.hasPermissionOr403(SystemPermission.EDITAR_TURMA, ctx))
+    if (!Utils.hasPermissionOrThrow(SystemPermission.EDITAR_TURMA, ctx))
       return;
     var idTurma = ctx.pathParam("id");
     Turma turma = turmas.get(idTurma);
@@ -111,7 +111,7 @@ public class TurmaController {
   }
 
   private static void excluirTurma(Context ctx) {
-    if (!Utils.hasPermissionOr403(SystemPermission.EXCLUIR_TURMA, ctx))
+    if (!Utils.hasPermissionOrThrow(SystemPermission.EXCLUIR_TURMA, ctx))
       return;
     var id = ctx.pathParam("id");
     if (turmas.remove(id) == null) {
@@ -127,28 +127,4 @@ public class TurmaController {
     public String professorId;
   }
 
-  public static class Participante {
-    public String turmaId;
-    public String userId;
-    public String name;
-
-    public Participante(User user, Turma turma) {
-      this.turmaId = turma.getId();
-      this.userId = user.getId();
-      this.name = user.getName();
-    }
-
-    public static boolean isParticipante(String uid, String turmaId) {
-      var turma = TurmaController.getTurma(turmaId);
-      var auth = SecurityContext.getInstance();
-      var user = UserController.getUser(uid);
-      if (turma == null || user == null)
-        return false;
-      var isAutorTurma = auth.isProfessor(user)
-          && turma.getProfessorResponsavel().getId().equals(user.getId());
-      var isAlunoTurma = auth.isAluno(user) && turma.temAluno(user);
-      return isAutorTurma || isAlunoTurma;
-    }
-
-  }
 }

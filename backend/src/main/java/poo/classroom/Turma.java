@@ -85,7 +85,7 @@ public class Turma implements Resource {
       return true;
     if (!(o instanceof Turma))
       return false;
-    Turma turma = (Turma) o;
+    var turma = (Turma) o;
     return id.equals(turma.getId());
   }
 

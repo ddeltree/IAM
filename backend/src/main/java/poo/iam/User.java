@@ -2,7 +2,10 @@ package poo.iam;
 
 import java.util.*;
 
-public class User {
+import poo.iam.resources.Resource;
+import poo.iam.resources.ResourceTypes;
+
+public class User implements Resource {
   private static long proximoId = 1; // contador global
   protected final String id = String.valueOf(proximoId++);
   private String name;
@@ -81,5 +84,10 @@ public class User {
   @Override
   public int hashCode() {
     return id.hashCode();
+  }
+
+  @Override
+  public ResourceTypes getType() {
+    return ResourceTypes.USUARIO;
   }
 }

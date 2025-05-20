@@ -6,6 +6,8 @@ import poo.api.ComentarioController;
 import poo.api.PostController;
 import poo.api.TurmaController;
 import poo.api.UserController;
+import poo.api.exceptions.ForbiddenException;
+import poo.api.exceptions.NotFoundException;
 import poo.iam.SecurityContext;
 
 public class Main {
@@ -17,6 +19,14 @@ public class Main {
                 });
             });
         }).start(7000);
+
+        app.exception(NotFoundException.class, (e, ctx) -> {
+            ctx.status(404).result(e.getMessage());
+        });
+        app.exception(ForbiddenException.class, (e, ctx) -> {
+            ctx.status(403).result(e.getMessage());
+        });
+
         SecurityContext.getInstance();
         TurmaController.register(app);
         PostController.register(app);

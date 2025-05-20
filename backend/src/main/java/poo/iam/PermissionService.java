@@ -17,5 +17,4 @@ public class PermissionService {
     var permission = new Permission(action, resource);
     return hasPermission(user, permission);
   }
-
 }

@@ -2,9 +2,10 @@ package poo.api;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import poo.api.exceptions.ForbiddenException;
 import poo.iam.MembershipManager;
 import poo.iam.SecurityContext;
-import poo.iam.SystemPermission;
+import static poo.iam.SystemPermission.*;
 import poo.iam.User;
 
 import java.util.*;
@@ -26,27 +27,29 @@ public class UserController {
   }
 
   private static void listarUsuarios(Context ctx) {
-    if (!Utils.hasPermissionOr403(SystemPermission.LISTAR_USUARIOS, ctx))
+    if (!Utils.hasPermissionOrThrow(LISTAR_USUARIOS, ctx))
       return;
     ctx.json(usuarios.values().stream().map(UserController::toDTO).toList());
   }
 
   private static void verPerfil(Context ctx) {
-    if (!Utils.hasPermissionOr403(SystemPermission.VER_PERFIL, ctx))
-      return;
-    var user = Utils.findUserOr404(ctx);
-    ctx.json(toDTO(user));
+    var authUser = Utils.findAuthUserOr404(ctx);
+    var profileOwner = usuarios.get(ctx.pathParam("id"));
+    if (!VER_PERFIL.isAllowed(authUser, profileOwner))
+      throw new ForbiddenException();
+    ctx.json(toDTO(profileOwner));
   }
 
   private static void novoUsuario(Context ctx) {
     UserDTO dto = ctx.bodyAsClass(UserDTO.class);
     switch (dto.tipo) {
       case 0:
-        if (!Utils.hasPermissionOr403(SystemPermission.CRIAR_ALUNO, ctx))
+        if (!Utils.hasPermissionOrThrow(CRIAR_ALUNO, ctx)) {
           return;
+        }
         break;
       case 1:
-        if (!Utils.hasPermissionOr403(SystemPermission.CRIAR_PROFESSOR, ctx))
+        if (!Utils.hasPermissionOrThrow(CRIAR_PROFESSOR, ctx))
           return;
         break;
       default:
@@ -61,9 +64,9 @@ public class UserController {
   }
 
   private static void atualizarNome(Context ctx) {
-    if (!Utils.hasPermissionOr403(SystemPermission.EDITAR_USUARIO, ctx))
+    if (!Utils.hasPermissionOrThrow(EDITAR_USUARIO, ctx))
       return;
-    var user = Utils.findUserOr404(ctx);
+    var user = Utils.findAuthUserOr404(ctx);
     if (!user.getId().equals(ctx.pathParam("id")))
       return;
     UserDTO dto = ctx.bodyAsClass(UserDTO.class);
@@ -72,9 +75,9 @@ public class UserController {
   }
 
   private static void excluirUsuario(Context ctx) {
-    if (!Utils.hasPermissionOr403(SystemPermission.EXCLUIR_USUARIO, ctx))
+    if (!Utils.hasPermissionOrThrow(EXCLUIR_USUARIO, ctx))
       return;
-    var authUser = Utils.findUserOr404(ctx);
+    var authUser = Utils.findAuthUserOr404(ctx);
     var targetUser = getUser(ctx.pathParam("id"));
     if (!authUser.equals(targetUser) && !Utils.isAdmin(authUser.getId()))
       return;

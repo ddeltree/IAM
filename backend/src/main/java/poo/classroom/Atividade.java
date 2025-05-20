@@ -24,4 +24,19 @@ public class Atividade extends Publicacao {
   public ResourceTypes getType() {
     return ResourceTypes.ATIVIDADE;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (!(o instanceof Atividade))
+      return false;
+    var other = (Atividade) o;
+    return id.equals(other.getId());
+  }
+
+  @Override
+  public int hashCode() {
+    return id.hashCode();
+  }
 }

@@ -5,5 +5,5 @@ public enum ResourceTypes {
   COMENTARIO,
   POST,
   TURMA,
-  USUARIO
+  USUARIO,
 }

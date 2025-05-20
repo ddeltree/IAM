@@ -1,5 +1,7 @@
 package poo.api;
 
+import poo.api.exceptions.ForbiddenException;
+import poo.api.exceptions.NotFoundException;
 import poo.iam.PermissionService;
 import poo.iam.SecurityContext;
 import poo.iam.SystemPermission;
@@ -12,27 +14,27 @@ public class Utils {
     var auth = SecurityContext.getInstance();
     var admin = auth.getAdmin();
     var user = uid.equals(admin.getId()) ? admin : UserController.getUser(uid);
-    var isAdmin = auth.isAdmin(user);
+    var isAdmin = user != null && auth.isAdmin(user);
     return isAdmin;
   }
 
-  public static User findUserOr404(Context ctx) {
+  public static boolean isAdmin(User user) {
+    return isAdmin(user.getId());
+  }
+
+  public static User findAuthUserOr404(Context ctx) {
     var uid = ctx.cookie("uid");
-    User user = UserController.getUser(uid);
-    if (user == null) {
-      ctx.status(404).result("Usuário não encontrado");
-      return null;
-    }
+    var auth = SecurityContext.getInstance();
+    User user = isAdmin(uid) ? auth.getAdmin() : UserController.getUser(uid);
+    if (user == null)
+      throw new NotFoundException("Usuário não encontrado");
     return user;
   }
 
-  public static boolean hasPermissionOr403(SystemPermission permission, Context ctx) {
-    var user = findUserOr404(ctx);
-    if (!PermissionService.hasPermission(user, permission.get())) {
-      ctx.status(403).result("Não autorizado");
-      return false;
-    } else {
-      return true;
-    }
+  public static boolean hasPermissionOrThrow(SystemPermission permission, Context ctx) {
+    var user = findAuthUserOr404(ctx);
+    if (!PermissionService.hasPermission(user, permission.get()))
+      throw new ForbiddenException();
+    return true;
   }
 }

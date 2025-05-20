@@ -45,4 +45,19 @@ public class Comentario implements Resource {
   public ResourceTypes getType() {
     return ResourceTypes.COMENTARIO;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (!(o instanceof Comentario))
+      return false;
+    var other = (Comentario) o;
+    return id.equals(other.getId());
+  }
+
+  @Override
+  public int hashCode() {
+    return id.hashCode();
+  }
 }

@@ -109,7 +109,7 @@ public class SecurityContext {
   }
 
   public boolean isAdmin(User user) {
-    return user.getId().equals(admin.getId());
+    return user != null && user.getId().equals(admin.getId());
   }
 
   public boolean isAdmin(String uid) {
