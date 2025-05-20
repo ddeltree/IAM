@@ -27,4 +27,8 @@ public class Participante {
     return isAutorTurma || isAlunoTurma;
   }
 
+  public static boolean isParticipante(User user, Turma turma) {
+    return isParticipante(user.getId(), turma.getId());
+  }
+
 }

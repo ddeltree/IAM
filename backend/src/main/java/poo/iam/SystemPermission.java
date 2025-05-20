@@ -16,10 +16,12 @@ public enum SystemPermission {
     var turma = (Turma) resource;
     return turma.getProfessorResponsavel().equals(user);
   }),
-
   LISTAR_TURMAS_ALUNO(Action.LISTAR_TURMAS_ALUNO, ResourceTypes.TURMA, (user, resource, ___) -> {
     var turma = (Turma) resource;
     return turma.temAluno(user.getId());
+  }),
+  VER_TURMA(Action.VER_TURMA, ResourceTypes.TURMA, (user, resource, __) -> {
+    return isAdminOrParticipante(user, resource);
   }),
 
   LISTAR_ATIVIDADES(Action.LISTAR_ATIVIDADES, ResourceTypes.ATIVIDADE, (user, turma, __) -> {
@@ -33,10 +35,7 @@ public enum SystemPermission {
   }),
 
   LISTAR_PARTICIPANTES(Action.LISTAR_PARTICIPANTES, ResourceTypes.USUARIO, (user, resource, __) -> {
-    var turma = (Turma) resource;
-    var isAdmin = Utils.isAdmin(user.getId());
-    var isParticipante = Participante.isParticipante(user.getId(), turma.getId());
-    return isAdmin || isParticipante;
+    return isAdminOrParticipante(user, resource);
   }),
   LISTAR_USUARIOS(Action.LISTAR_USUARIOS, ResourceTypes.USUARIO),
   VER_PERFIL(Action.VER_PERFIL, ResourceTypes.USUARIO, (user, resource, __) -> {
@@ -108,9 +107,10 @@ public enum SystemPermission {
 
   private final Permission permission;
   private final PermissionCondition condition;
+  private static PermissionCondition DEFAULT_CONDITION;
 
   SystemPermission(Action action, ResourceTypes resource) {
-    this(action, resource, (u, r, o) -> true); // sem regra contextual
+    this(action, resource, defaultCondition()); // sem regra contextual
   }
 
   SystemPermission(Action action, ResourceTypes resource, PermissionCondition condition) {
@@ -119,11 +119,29 @@ public enum SystemPermission {
   }
 
   public boolean isAllowed(User user, Resource resource, Object... args) {
+    if (!inheritsPermission(user, permission))
+      return false;
     return condition.test(user, resource, args);
+  }
+
+  public boolean isAllowed(User user) {
+    if (condition != DEFAULT_CONDITION)
+      throw new UnsupportedOperationException("A permissão " + permission + " exige uma condição");
+    return isAllowed(user, null, new Object[0]);
   }
 
   public Permission get() {
     return permission;
+  }
+
+  private static boolean inheritsPermission(User user, Permission permission) {
+    if (user.hasInlinePermission(permission))
+      return true;
+    for (Group group : user.getGroups()) {
+      if (group.hasPermission(permission))
+        return true;
+    }
+    return false;
   }
 
   private static boolean isAdminOrParticipante(User user, Resource turma) {
@@ -148,6 +166,13 @@ public enum SystemPermission {
       return user.equals(((Comentario) resource).getAutor());
     else
       return false;
+  }
+
+  private static PermissionCondition defaultCondition() {
+    if (DEFAULT_CONDITION == null) {
+      DEFAULT_CONDITION = (u, r, o) -> true;
+    }
+    return DEFAULT_CONDITION;
   }
 }
 

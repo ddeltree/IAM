@@ -27,13 +27,13 @@ public class UserController {
   }
 
   private static void listarUsuarios(Context ctx) {
-    if (!Utils.hasPermissionOrThrow(LISTAR_USUARIOS, ctx))
+    if (!Utils.hasPermissionOrThrow(ctx, LISTAR_USUARIOS))
       return;
     ctx.json(usuarios.values().stream().map(UserController::toDTO).toList());
   }
 
   private static void verPerfil(Context ctx) {
-    var authUser = Utils.findAuthUserOr404(ctx);
+    var authUser = Utils.findAuthUserOrThrow(ctx);
     var profileOwner = usuarios.get(ctx.pathParam("id"));
     if (!VER_PERFIL.isAllowed(authUser, profileOwner))
       throw new ForbiddenException();
@@ -44,12 +44,12 @@ public class UserController {
     UserDTO dto = ctx.bodyAsClass(UserDTO.class);
     switch (dto.tipo) {
       case 0:
-        if (!Utils.hasPermissionOrThrow(CRIAR_ALUNO, ctx)) {
+        if (!Utils.hasPermissionOrThrow(ctx, CRIAR_ALUNO)) {
           return;
         }
         break;
       case 1:
-        if (!Utils.hasPermissionOrThrow(CRIAR_PROFESSOR, ctx))
+        if (!Utils.hasPermissionOrThrow(ctx, CRIAR_PROFESSOR))
           return;
         break;
       default:
@@ -64,22 +64,17 @@ public class UserController {
   }
 
   private static void atualizarNome(Context ctx) {
-    if (!Utils.hasPermissionOrThrow(EDITAR_USUARIO, ctx))
-      return;
-    var user = Utils.findAuthUserOr404(ctx);
-    if (!user.getId().equals(ctx.pathParam("id")))
+    var targetUser = getUser(ctx.pathParam("id"));
+    if (!Utils.hasPermissionOrThrow(ctx, EDITAR_USUARIO, targetUser))
       return;
     UserDTO dto = ctx.bodyAsClass(UserDTO.class);
-    user.setName(dto.name);
-    ctx.status(200).json(toDTO(user));
+    targetUser.setName(dto.name);
+    ctx.status(200).json(toDTO(targetUser));
   }
 
   private static void excluirUsuario(Context ctx) {
-    if (!Utils.hasPermissionOrThrow(EXCLUIR_USUARIO, ctx))
-      return;
-    var authUser = Utils.findAuthUserOr404(ctx);
     var targetUser = getUser(ctx.pathParam("id"));
-    if (!authUser.equals(targetUser) && !Utils.isAdmin(authUser.getId()))
+    if (!Utils.hasPermissionOrThrow(ctx, EXCLUIR_USUARIO, targetUser))
       return;
     usuarios.remove(targetUser.getId());
     ctx.status(204);
