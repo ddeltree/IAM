@@ -2,6 +2,7 @@ package poo.api;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import poo.api.exceptions.NotFoundException;
 import poo.classroom.Atividade;
 
 import java.util.*;
@@ -66,6 +67,18 @@ public class AtividadeController {
     } else {
       ctx.status(204);
     }
+  }
+
+  private static Atividade findAtividadeOrThrow(Context ctx) {
+    var id = ctx.pathParam("id");
+    return findAtividadeOrThrow(id);
+  }
+
+  public static Atividade findAtividadeOrThrow(String id) {
+    var atv = atividades.get(id);
+    if (atv == null)
+      throw new NotFoundException("Atividade não encontrada");
+    return atv;
   }
 
   public static class AtividadeDTO {

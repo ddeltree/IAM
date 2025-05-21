@@ -58,6 +58,10 @@ public class Turma implements Resource {
     posts.add(post);
   }
 
+  public void removerPost(Post post) {
+    posts.remove(post);
+  }
+
   public void adicionarAluno(User aluno) {
     alunos.add(aluno);
   }

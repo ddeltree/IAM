@@ -41,6 +41,7 @@ public class PostController {
   }
 
   private static void criar(Context ctx) {
+    // FIXME
     PostDTO dto = ctx.bodyAsClass(PostDTO.class);
     var turmaId = ctx.pathParam("turmaId");
     var turma = TurmaController.findTurmaOrThrow(turmaId);
@@ -49,6 +50,7 @@ public class PostController {
     User user = Utils.findAuthUserOrThrow(ctx);
     Post post = new Post(dto.titulo, dto.corpo, user, turma);
     posts.put(post.getId(), post);
+    turma.adicionarPost(post);
     ctx.status(201).json(post);
   }
 
@@ -67,6 +69,7 @@ public class PostController {
     if (!Utils.hasPermissionOrThrow(ctx, EXCLUIR_POST, post))
       return;
     posts.remove(post.getId());
+    post.getTurma().removerPost(post);
     ctx.status(204);
   }
 

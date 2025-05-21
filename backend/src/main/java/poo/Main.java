@@ -14,22 +14,27 @@ import poo.iam.SecurityContext;
 
 public class Main {
     public static void main(String[] args) {
-        Javalin app = Javalin.create(config -> {
+        var app = createApp();
+        app.start(7000);
+    }
+
+    public static Javalin createApp() {
+        var app = Javalin.create(config -> {
             config.bundledPlugins.enableCors(cors -> {
                 cors.addRule(it -> {
                     it.anyHost(); // Habilita acesso de qualquer origem (CORS)
                 });
             });
-        }).start(7000);
+        });
 
         app.exception(NotFoundException.class, (e, ctx) -> {
-            ctx.status(404).result(e.getMessage());
+            ctx.status(NotFoundException.STATUS_CODE).result(e.getMessage());
         });
         app.exception(ForbiddenException.class, (e, ctx) -> {
-            ctx.status(403).result(e.getMessage());
+            ctx.status(ForbiddenException.STATUS_CODE).result(e.getMessage());
         });
         app.exception(UnauthorizedException.class, (e, ctx) -> {
-            ctx.status(401).result(e.getMessage());
+            ctx.status(UnauthorizedException.STATUS_CODE).result(e.getMessage());
         });
 
         SecurityContext.getInstance();
@@ -39,5 +44,7 @@ public class Main {
         ComentarioController.register(app);
         UserController.register(app);
         ParticipantesController.register(app);
+
+        return app;
     }
 }

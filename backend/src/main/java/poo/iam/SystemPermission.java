@@ -34,8 +34,8 @@ public enum SystemPermission {
     return isAdminOrParticipante(user, turma);
   }),
 
-  LISTAR_PARTICIPANTES(Action.LISTAR_PARTICIPANTES, ResourceTypes.USUARIO, (user, resource, __) -> {
-    return isAdminOrParticipante(user, resource);
+  LISTAR_PARTICIPANTES(Action.LISTAR_PARTICIPANTES, ResourceTypes.USUARIO, (user, turma, __) -> {
+    return isAdminOrParticipante(user, turma);
   }),
   LISTAR_USUARIOS(Action.LISTAR_USUARIOS, ResourceTypes.USUARIO),
   VER_PERFIL(Action.VER_PERFIL, ResourceTypes.USUARIO, (user, resource, __) -> {
@@ -91,7 +91,7 @@ public enum SystemPermission {
   }),
   EXCLUIR_COMENTARIO(Action.EXCLUIR_COMENTARIO, ResourceTypes.COMENTARIO, (user, resource, __) -> {
     var comentario = (Comentario) resource;
-    var isProf = comentario.getPost().getTurma().getProfessorResponsavel().equals(user);
+    var isProf = comentario.getPublicacao().getTurma().getProfessorResponsavel().equals(user);
     return Utils.isAdmin(user) || isProf || isAutor(user, comentario);
   }),
   // apenas o ADMIN e o próprio USUÁRIO

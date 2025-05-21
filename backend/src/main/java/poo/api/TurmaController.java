@@ -2,10 +2,8 @@ package poo.api;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import poo.api.exceptions.ForbiddenException;
 import poo.api.exceptions.NotFoundException;
 import poo.classroom.Turma;
-import poo.iam.SecurityContext;
 import poo.iam.SystemPermission;
 import poo.iam.User;
 

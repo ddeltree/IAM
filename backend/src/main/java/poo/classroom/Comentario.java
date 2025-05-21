@@ -9,12 +9,12 @@ public class Comentario implements Resource {
   protected final String id = String.valueOf(proximoId++);
   private String conteudo;
   private User autor;
-  private Post post;
+  private Publicacao publicacao;
 
-  public Comentario(String conteudo, User autor, Post post) {
+  public Comentario(String conteudo, User autor, Publicacao post) {
     this.conteudo = conteudo.strip();
     this.autor = autor;
-    this.post = post;
+    this.publicacao = post;
   }
 
   public String getId() {
@@ -37,8 +37,8 @@ public class Comentario implements Resource {
     return autor;
   }
 
-  public Post getPost() {
-    return post;
+  public Publicacao getPublicacao() {
+    return publicacao;
   }
 
   @Override
