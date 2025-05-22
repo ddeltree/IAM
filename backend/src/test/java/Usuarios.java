@@ -5,28 +5,12 @@ import org.junit.jupiter.api.Test;
 import io.javalin.testtools.HttpClient;
 import io.javalin.testtools.JavalinTest;
 import io.javalin.testtools.TestCase;
+import io.javalin.testtools.TestConfig;
 import okhttp3.Response;
 import poo.Main;
 import poo.api.exceptions.ForbiddenException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Usuarios {
-
-  private static final Logger log = LoggerFactory.getLogger(Usuarios.class);
-
-  public static class Body {
-    public Body() {
-    }
-
-    public Body(int tipo) {
-      this.tipo = tipo;
-    }
-
-    public String name = "Nome de usuário";
-    public int tipo = 1;
-  }
-
   @Test
   void listarUsuarios() {
     int ADM_ID = 1;
@@ -86,6 +70,141 @@ public class Usuarios {
         }
       }
     });
+
+  }
+
+  @Test
+  void adminPodeCriarProfessorEProfessorCriaAluno() {
+    // admin pode criar professores, professores podem criar alunos
+    test((server, client) -> {
+      criar2Professores2Alunos(client);
+    });
+  }
+
+  @Test
+  void adminNaoCriaAlunos() {
+    // admin não pode criar alunos
+    test((server, client) -> {
+      var res = POST(client, "/usuarios", ADM_ID, new Body(0));
+      assertEquals(ForbiddenException.STATUS_CODE, res.code());
+    });
+  }
+
+  @Test
+  void professorNaoCriaProfessores() {
+    // professor não pode criar professores
+    test((server, client) -> {
+      criar2Professores2Alunos(client);
+      var res = POST(client, "/usuarios", PROF1_ID, new Body(1));
+      assertEquals(ForbiddenException.STATUS_CODE, res.code());
+    });
+  }
+
+  @Test
+  void ninguemCriaTipoInvalido() {
+    // ninguém pode criar um tipo inválido de usuário
+    test((server, client) -> {
+      criar2Professores2Alunos(client);
+      var status = 400;
+      var tiposInvalidos = new int[] { -1, 2 };
+      for (int tipo : tiposInvalidos) {
+        var res = POST(client, "/usuarios", ADM_ID, new Body(tipo));
+        assertEquals(status, res.code());
+
+        res = POST(client, "/usuarios", PROF1_ID, new Body(tipo));
+        assertEquals(status, res.code());
+
+        res = POST(client, "/usuarios", ALUNO1_ID, new Body(tipo));
+        assertEquals(status, res.code());
+      }
+    });
+  }
+
+  @Test
+  void usuarioPodeAtualizarSeuPerfil() {
+    // apenas o próprio usuário pode atualizar o seu perfil
+    test((server, client) -> {
+      criar2Professores2Alunos(client);
+      for (int i = 2; i < 6; i++) {
+        var res = PUT(client, "/usuarios/" + i, i, new Body());
+        assertEquals(200, res.code());
+      }
+    });
+  }
+
+  @Test
+  void outrosUsuariosNaoPodeAtualizarPerfil() {
+    // outros usuários não podem alterar o perfil de outros
+    test((server, client) -> {
+      criar2Professores2Alunos(client);
+      for (int uid = 2; uid < 6; uid++) {
+        for (int targetId = 2; targetId < 6; targetId++) {
+          if (uid == targetId)
+            continue;
+          var res = PUT(client, "/usuarios/" + targetId, uid, new Body());
+          assertEquals(ForbiddenException.STATUS_CODE, res.code());
+        }
+      }
+    });
+  }
+
+  @Test
+  void usuarioPodeSeDeletar() {
+    // outros usuários podem deletar seus próprios perfis
+    test((server, client) -> {
+      criar2Professores2Alunos(client);
+      for (int i = 2; i < 6; i++) {
+        var res = DELETE(client, "/usuarios/" + i, i);
+        assertEquals(204, res.code());
+      }
+    });
+  }
+
+  @Test
+  void outrosUsuariosNaoPodeDeletar() {
+    // outros usuários não podem deletar perfis de outros
+    test((server, client) -> {
+      criar2Professores2Alunos(client);
+      for (int uid = 2; uid < 6; uid++) {
+        for (int targetId = 2; targetId < 6; targetId++) {
+          if (uid == targetId)
+            continue;
+          var res = DELETE(client, "/usuarios/" + targetId, uid);
+          assertEquals(ForbiddenException.STATUS_CODE, res.code());
+        }
+      }
+    });
+  }
+
+  @Test
+  void adminPodeDeletarUsuarios() {
+    // admin pode deletar outros perfis
+    test((server, client) -> {
+      criar2Professores2Alunos(client);
+      for (int i = 2; i < 6; i++) {
+        var res = DELETE(client, "/usuarios/" + i, ADM_ID);
+        assertEquals(204, res.code());
+      }
+    });
+  }
+
+  @Test
+  void ninguemPodeDeletarAdmin() {
+    // usuários comuns não podem deletar o ADMIN
+    test((server, client) -> {
+      criar2Professores2Alunos(client);
+      for (int i = 2; i < 6; i++) {
+        var res = DELETE(client, "/usuarios/" + ADM_ID, i);
+        assertEquals(ForbiddenException.STATUS_CODE, res.code());
+      }
+    });
+  }
+
+  private void test(TestCase testCase) {
+    var config = new TestConfig();
+
+    var app = Main.createApp();
+    JavalinTest.test(app, config, testCase);
   }
 
   public static final int ADM_ID = 1;
@@ -98,16 +217,13 @@ public class Usuarios {
     for (int i = 0; i < 2; i++) {
       var res = POST(client, "/usuarios", ADM_ID, new Body(1));
       assertEquals(201, res.code());
+
     }
     for (int i = 1; i < 3; i++) {
       int _i = i;
       var res = POST(client, "/usuarios", ADM_ID + _i, new Body(0));
       assertEquals(201, res.code());
     }
-  }
-
-  private static void test(TestCase testCase) {
-    JavalinTest.test(Main.createApp(), testCase);
   }
 
   private static Response GET(HttpClient client, String path, int UID) {

@@ -1,0 +1,220 @@
+@startuml
+!define CLASS_ICON class
+!define ENUM_ICON enum
+!define INTERFACE_ICON interface
+
+skinparam class {
+  BackgroundColor<<enum>> LightBlue
+  BackgroundColor<<interface>> LightGreen
+}
+
+namespace poo.iam {
+  class PermissionHolder {
+    -permissions: Set<Permission>
+    +grant(permission: Permission): boolean
+    +revoke(permission: Permission): boolean
+    +has(permission: Permission): boolean
+    +getPermissions(): Set<Permission>
+  }
+
+
+  enum SystemPermission {
+    +LISTAR_TURMAS_ADM
+    +LISTAR_TURMAS_PROFESSOR
+    +LISTAR_TURMAS_ALUNO
+    +VER_TURMA
+    +LISTAR_ATIVIDADES
+    +LISTAR_POSTS
+    +LISTAR_COMENTARIOS
+    +LISTAR_PARTICIPANTES
+    +LISTAR_USUARIOS
+    +VER_PERFIL
+    +CRIAR_TURMA
+    +CRIAR_ATIVIDADE
+    +CRIAR_POST
+    +CRIAR_COMENTARIO
+    +CRIAR_PROFESSOR
+    +CRIAR_ALUNO
+    +EDITAR_TURMA
+    +EDITAR_ATIVIDADE
+    +EDITAR_POST
+    +EDITAR_COMENTARIO
+    +EDITAR_USUARIO
+    +EXCLUIR_TURMA
+    +EXCLUIR_ATIVIDADE
+    +EXCLUIR_POST
+    +EXCLUIR_COMENTARIO
+    +EXCLUIR_USUARIO
+    +MATRICULAR_ALUNO
+    +DESMATRICULAR_ALUNO
+    -permission: Permission
+    -condition: PermissionCondition
+    +isAllowed(user: User, resource: Resource, args: Object...): boolean
+    +isAllowed(user: User): boolean
+    +get(): Permission
+  }
+
+
+  enum Action {
+    LISTAR_TURMAS_ADM
+    LISTAR_TURMAS_PROFESSOR
+    LISTAR_TURMAS_ALUNO
+    LISTAR_ATIVIDADES
+    LISTAR_POSTS
+    LISTAR_COMENTARIOS
+    LISTAR_PARTICIPANTES
+    LISTAR_USUARIOS
+    VER_PERFIL
+    VER_TURMA
+    
+    CRIAR_TURMA
+    CRIAR_ATIVIDADE
+    CRIAR_POST
+    CRIAR_COMENTARIO
+    CRIAR_PROFESSOR
+    CRIAR_ALUNO
+    
+    EDITAR_TURMA
+    EDITAR_ATIVIDADE
+    EDITAR_POST
+    EDITAR_COMENTARIO
+    EDITAR_USUARIO
+    
+    EXCLUIR_TURMA
+    EXCLUIR_ATIVIDADE
+    EXCLUIR_POST
+    EXCLUIR_COMENTARIO
+    EXCLUIR_USUARIO
+    
+    MATRICULAR_ALUNO
+    DESMATRICULAR_ALUNO
+  }
+
+  class Permission {
+    -action: Action
+    -resource: ResourceTypes
+    +Permission(action: Action, resourceType: ResourceTypes)
+    +Permission(action: Action, resource: Resource)
+    +getAction(): Action
+    +equals(o: Object): boolean
+    +hashCode(): int
+    +toString(): String
+  }
+
+  interface PermissionCondition <<FunctionalInterface>> {
+    +test(user: User, resource: Resource, context: Object...): boolean
+  }
+
+  class User implements Resource {
+    -proximoId: long {static}
+    -id: String {readOnly}
+    -name: String
+    -groups: Set<Group>
+    -permissionHolder: PermissionHolder
+    +User()
+    +User(name: String)
+    +grantPermission(permission: Permission): boolean
+    +revokePermission(permission: Permission): boolean
+    +hasInlinePermission(permission: Permission): boolean
+    +getInlinePermissions(): Set<Permission>
+    +joinGroup(group: Group): void
+    +quitGroup(group: Group): void
+    +getGroups(): Set<Group>
+    +getId(): String
+    +getName(): String
+    +setName(name: String): void
+    +equals(o: Object): boolean
+    +hashCode(): int
+    +getType(): ResourceTypes
+  }
+
+  class Group {
+    -name: String
+    -users: Set<User>
+    -permissionHolder: PermissionHolder
+    +Group(name: String)
+    +grantPermission(permission: Permission): boolean
+    +revokePermission(permission: Permission): boolean
+    +hasPermission(permission: Permission): boolean
+    +getPermissions(): Set<Permission>
+    #addUser(user: User): void
+    #removeUser(user: User): void
+  }
+
+  class SecurityContext {
+    -instance: SecurityContext {static}
+    -admin: User
+    -alunos: Group
+    -professores: Group
+    -SecurityContext()
+    +getInstance(): SecurityContext {static}
+    +getAdmin(): User
+    +getAlunos(): Group
+    +getProfessores(): Group
+    +isProfessor(user: User): boolean
+    +isProfessor(uid: String): boolean
+    +isAluno(user: User): boolean
+    +isAdmin(user: User): boolean
+    +isAdmin(uid: String): boolean
+  }
+
+  class MembershipManager {
+    +link(user: User, group: Group): void {static}
+    +unlink(user: User, group: Group): void {static}
+  }
+
+
+}
+
+namespace poo.iam.resources {
+  enum ResourceTypes {
+    ATIVIDADE
+    COMENTARIO
+    POST
+    TURMA
+    USUARIO
+  }
+
+  interface Resource {
+    +getType(): ResourceTypes
+  }
+
+  class Turma implements Resource {
+    +getType(): ResourceTypes
+  }
+
+  class Atividade implements Resource {
+    +getType(): ResourceTypes
+  }
+
+  class Post implements Resource {
+    +getType(): ResourceTypes
+  }
+
+  class Comentario implements Resource {
+    +getType(): ResourceTypes
+  }
+}
+
+' Relacionamentos principais
+User "1" *-- "1" PermissionHolder
+User "1" -- "*" Group
+
+Group "1" *-- "1" PermissionHolder
+Group "1" -- "*" User
+
+PermissionHolder "1" o-- "*" Permission
+
+SystemPermission --> Action
+SystemPermission --> ResourceTypes
+SystemPermission ..> PermissionCondition
+
+Permission --> Action
+Permission --> ResourceTypes
+
+SecurityContext "1" *-- "1" User : admin
+SecurityContext "1" *-- "*" Group : grupos
+
+
+
+@enduml
