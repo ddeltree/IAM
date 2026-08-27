@@ -26,7 +26,7 @@ public class ComentarioController {
     Publicacao publicacao = findPublicacaoOrThrow(ctx);
     if (!Utils.hasPermissionOrThrow(ctx, LISTAR_COMENTARIOS, publicacao.getTurma()))
       return;
-    ctx.json(comentarios.values().stream().filter(c -> c.getPublicacao().equals(publicacao)).toList());
+    ctx.json(publicacao.getComentarios());
   }
 
   private static void ver(Context ctx) {
@@ -44,6 +44,7 @@ public class ComentarioController {
     ComentarioDTO dto = ctx.bodyAsClass(ComentarioDTO.class);
     var comentario = new Comentario(dto.conteudo, autor, publicacao);
     comentarios.put(comentario.getId(), comentario);
+    publicacao.adicionarComentario(comentario);
     ctx.status(201).json(comentario);
   }
 
@@ -61,12 +62,20 @@ public class ComentarioController {
     if (!Utils.hasPermissionOrThrow(ctx, EXCLUIR_COMENTARIO, comentario))
       return;
     comentarios.remove(comentario.getId());
+    comentario.getPublicacao().removerComentario(comentario);
     ctx.status(204);
   }
 
+  /**
+   * Busca o comentário da rota conferindo que ele pertence à publicação do
+   * caminho.
+   */
   private static Comentario findComentarioOrThrow(Context ctx) {
-    var id = ctx.pathParam("id");
-    return findComentarioOrThrow(id);
+    var publicacao = findPublicacaoOrThrow(ctx);
+    var comentario = findComentarioOrThrow(ctx.pathParam("id"));
+    if (!comentario.getPublicacao().equals(publicacao))
+      throw new NotFoundException("Comentario não encontrado");
+    return comentario;
   }
 
   public static Comentario findComentarioOrThrow(String id) {
@@ -76,7 +85,12 @@ public class ComentarioController {
     return com;
   }
 
+  /**
+   * Resolve a publicação (post ou atividade) do caminho, conferindo que ela
+   * pertence à turma da rota.
+   */
   private static Publicacao findPublicacaoOrThrow(Context ctx) {
+    var turma = TurmaController.findTurmaOrThrow(ctx.pathParam("turmaId"));
     var tipoPublicacao = ctx.pathParam("publicacao"); // 'atividades' | 'posts'
     var pubId = ctx.pathParam("pubId");
     Publicacao publicacao;
@@ -86,7 +100,25 @@ public class ComentarioController {
       publicacao = PostController.findPostOrThrow(pubId);
     else
       throw new NotFoundException("Tipo de publicação (posts | atividades) inválido: " + tipoPublicacao);
+    if (!publicacao.getTurma().equals(turma))
+      throw new NotFoundException("Publicação não encontrada nesta turma");
     return publicacao;
+  }
+
+  /** Remove em cascata os comentários de uma publicação excluída. */
+  static void removerComentariosDe(Publicacao publicacao) {
+    var daPublicacao = comentarios.values().stream()
+        .filter(c -> c.getPublicacao().equals(publicacao))
+        .toList();
+    for (Comentario comentario : daPublicacao) {
+      comentarios.remove(comentario.getId());
+      publicacao.removerComentario(comentario);
+    }
+  }
+
+  /** Esvazia o repositório em memória. Usado pelos testes. */
+  public static void reset() {
+    comentarios.clear();
   }
 
   public static class ComentarioDTO {

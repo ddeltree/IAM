@@ -41,13 +41,11 @@ public class PostController {
   }
 
   private static void criar(Context ctx) {
-    // FIXME
-    PostDTO dto = ctx.bodyAsClass(PostDTO.class);
-    var turmaId = ctx.pathParam("turmaId");
-    var turma = TurmaController.findTurmaOrThrow(turmaId);
+    var turma = TurmaController.findTurmaOrThrow(ctx.pathParam("turmaId"));
     if (!Utils.hasPermissionOrThrow(ctx, CRIAR_POST, turma))
       return;
     User user = Utils.findAuthUserOrThrow(ctx);
+    PostDTO dto = ctx.bodyAsClass(PostDTO.class);
     Post post = new Post(dto.titulo, dto.corpo, user, turma);
     posts.put(post.getId(), post);
     turma.adicionarPost(post);
@@ -70,12 +68,20 @@ public class PostController {
       return;
     posts.remove(post.getId());
     post.getTurma().removerPost(post);
+    ComentarioController.removerComentariosDe(post);
     ctx.status(204);
   }
 
+  /**
+   * Busca o post da rota conferindo que ele pertence à turma do caminho — sem
+   * isso um id de outra turma passaria pela URL sem ser notado.
+   */
   private static Post findPostOrThrow(Context ctx) {
-    String id = ctx.pathParam("postId");
-    return findPostOrThrow(id);
+    var turma = TurmaController.findTurmaOrThrow(ctx.pathParam("turmaId"));
+    var post = findPostOrThrow(ctx.pathParam("postId"));
+    if (!post.getTurma().equals(turma))
+      throw new NotFoundException("Post não encontrado");
+    return post;
   }
 
   public static Post findPostOrThrow(String id) {
@@ -83,6 +89,22 @@ public class PostController {
     if (post == null)
       throw new NotFoundException("Post não encontrado");
     return post;
+  }
+
+  /** Remove em cascata os posts de uma turma excluída. */
+  static void removerPostsDe(Turma turma) {
+    var daTurma = posts.values().stream()
+        .filter(p -> p.getTurma().equals(turma))
+        .toList();
+    for (Post post : daTurma) {
+      posts.remove(post.getId());
+      ComentarioController.removerComentariosDe(post);
+    }
+  }
+
+  /** Esvazia o repositório em memória. Usado pelos testes. */
+  public static void reset() {
+    posts.clear();
   }
 
   public static class PostDTO {

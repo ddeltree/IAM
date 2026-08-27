@@ -4,6 +4,9 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import poo.api.exceptions.NotFoundException;
 import poo.classroom.Atividade;
+import poo.classroom.Turma;
+
+import static poo.iam.SystemPermission.*;
 
 import java.util.*;
 
@@ -19,27 +22,38 @@ public class AtividadeController {
     app.delete("/atividades/{id}", AtividadeController::excluir);
   }
 
+  /**
+   * Lista as atividades que o usuário autenticado pode ver. Aceita o filtro
+   * opcional {@code ?turmaId=} para restringir a uma turma.
+   */
   private static void listar(Context ctx) {
-    ctx.json(atividades.values());
+    var user = Utils.findAuthUserOrThrow(ctx);
+    var turmaId = ctx.queryParam("turmaId");
+    List<Atividade> result = new ArrayList<>();
+    for (Atividade atividade : atividades.values()) {
+      if (turmaId != null && !atividade.getTurma().getId().equals(turmaId))
+        continue;
+      if (!LISTAR_ATIVIDADES.isAllowed(user, atividade.getTurma()))
+        continue;
+      result.add(atividade);
+    }
+    ctx.json(result);
   }
 
   private static void ver(Context ctx) {
-    String id = ctx.pathParam("id");
-    Atividade atividade = atividades.get(id);
-    if (atividade == null) {
-      ctx.status(404).result("Atividade não encontrada");
+    var atividade = findAtividadeOrThrow(ctx);
+    if (!Utils.hasPermissionOrThrow(ctx, LISTAR_ATIVIDADES, atividade.getTurma()))
       return;
-    }
     ctx.json(atividade);
   }
 
   private static void criar(Context ctx) {
     AtividadeDTO dto = ctx.bodyAsClass(AtividadeDTO.class);
-    var turma = TurmaController.getTurma(dto.turmaId);
-    if (turma == null) {
-      ctx.status(404).result("Turma não encontrada");
+    if (dto.turmaId == null)
+      throw new NotFoundException("Turma não encontrada");
+    var turma = TurmaController.findTurmaOrThrow(dto.turmaId);
+    if (!Utils.hasPermissionOrThrow(ctx, CRIAR_ATIVIDADE, turma))
       return;
-    }
     Atividade atividade = new Atividade(dto.titulo, dto.corpo, turma);
     atividade.setDataEntrega(dto.dataEntrega);
     atividades.put(atividade.getId(), atividade);
@@ -47,12 +61,9 @@ public class AtividadeController {
   }
 
   private static void atualizar(Context ctx) {
-    String id = ctx.pathParam("id");
-    Atividade atividade = atividades.get(id);
-    if (atividade == null) {
-      ctx.status(404).result("Atividade não encontrada");
+    var atividade = findAtividadeOrThrow(ctx);
+    if (!Utils.hasPermissionOrThrow(ctx, EDITAR_ATIVIDADE, atividade))
       return;
-    }
     AtividadeDTO dto = ctx.bodyAsClass(AtividadeDTO.class);
     atividade.setTitulo(dto.titulo);
     atividade.setCorpo(dto.corpo);
@@ -61,12 +72,12 @@ public class AtividadeController {
   }
 
   private static void excluir(Context ctx) {
-    String id = ctx.pathParam("id");
-    if (atividades.remove(id) == null) {
-      ctx.status(404).result("Atividade não encontrada");
-    } else {
-      ctx.status(204);
-    }
+    var atividade = findAtividadeOrThrow(ctx);
+    if (!Utils.hasPermissionOrThrow(ctx, EXCLUIR_ATIVIDADE, atividade))
+      return;
+    atividades.remove(atividade.getId());
+    ComentarioController.removerComentariosDe(atividade);
+    ctx.status(204);
   }
 
   private static Atividade findAtividadeOrThrow(Context ctx) {
@@ -79,6 +90,22 @@ public class AtividadeController {
     if (atv == null)
       throw new NotFoundException("Atividade não encontrada");
     return atv;
+  }
+
+  /** Remove em cascata as atividades de uma turma excluída. */
+  static void removerAtividadesDe(Turma turma) {
+    var daTurma = atividades.values().stream()
+        .filter(a -> a.getTurma().equals(turma))
+        .toList();
+    for (Atividade atividade : daTurma) {
+      atividades.remove(atividade.getId());
+      ComentarioController.removerComentariosDe(atividade);
+    }
+  }
+
+  /** Esvazia o repositório em memória. Usado pelos testes. */
+  public static void reset() {
+    atividades.clear();
   }
 
   public static class AtividadeDTO {

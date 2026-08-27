@@ -2,18 +2,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-import io.javalin.testtools.HttpClient;
-import io.javalin.testtools.JavalinTest;
-import io.javalin.testtools.TestCase;
-import io.javalin.testtools.TestConfig;
 import okhttp3.Response;
-import poo.Main;
 import poo.api.exceptions.ForbiddenException;
 
-public class Usuarios {
+public class UsuariosTest extends ApiFixture {
   @Test
   void listarUsuarios() {
-    int ADM_ID = 1;
     // Usuário ADMIN
     test((server, client) -> {
       var res = GET(client, "/usuarios", ADM_ID);
@@ -197,56 +191,6 @@ public class Usuarios {
         var res = DELETE(client, "/usuarios/" + ADM_ID, i);
         assertEquals(ForbiddenException.STATUS_CODE, res.code());
       }
-    });
-  }
-
-  private void test(TestCase testCase) {
-    var config = new TestConfig();
-
-    var app = Main.createApp();
-    JavalinTest.test(app, config, testCase);
-  }
-
-  public static final int ADM_ID = 1;
-  public static final int PROF1_ID = 2;
-  public static final int PROF2_ID = 3;
-  public static final int ALUNO1_ID = 4;
-  public static final int ALUNO2_ID = 5;
-
-  public static void criar2Professores2Alunos(HttpClient client) {
-    for (int i = 0; i < 2; i++) {
-      var res = POST(client, "/usuarios", ADM_ID, new Body(1));
-      assertEquals(201, res.code());
-
-    }
-    for (int i = 1; i < 3; i++) {
-      int _i = i;
-      var res = POST(client, "/usuarios", ADM_ID + _i, new Body(0));
-      assertEquals(201, res.code());
-    }
-  }
-
-  private static Response GET(HttpClient client, String path, int UID) {
-    return client.get(path, req -> {
-      req.header("Cookie", "uid=" + UID);
-    });
-  }
-
-  private static Response POST(HttpClient client, String path, int UID, Object body) {
-    return client.post(path, body, req -> {
-      req.header("Cookie", "uid=" + UID);
-    });
-  }
-
-  private static Response PUT(HttpClient client, String path, int UID, Object body) {
-    return client.put(path, body, req -> {
-      req.header("Cookie", "uid=" + UID);
-    });
-  }
-
-  private static Response DELETE(HttpClient client, String path, int UID) {
-    return client.delete(path, null, req -> {
-      req.header("Cookie", "uid=" + UID);
     });
   }
 

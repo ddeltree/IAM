@@ -100,7 +100,9 @@ public enum SystemPermission {
     return Utils.isAdmin(user) || user.equals(profileOwner);
   }),
 
-  MATRICULAR_ALUNO(Action.MATRICULAR_ALUNO, ResourceTypes.USUARIO),
+  MATRICULAR_ALUNO(Action.MATRICULAR_ALUNO, ResourceTypes.USUARIO, (user, turma, __) -> {
+    return isProfessorResponsavel(user, turma);
+  }),
   DESMATRICULAR_ALUNO(Action.DESMATRICULAR_ALUNO, ResourceTypes.USUARIO, (user, turma, __) -> {
     return isProfessorResponsavel(user, turma);
   });
@@ -134,11 +136,28 @@ public enum SystemPermission {
     return permission;
   }
 
+  /**
+   * Resolve a permissão somando o que o usuário tem inline com o que herda dos
+   * grupos, aplicando a regra "deny overrides": uma negação explícita em
+   * qualquer nível derruba o acesso, mesmo que outro nível conceda.
+   */
   private static boolean inheritsPermission(User user, Permission permission) {
+    if (isDenied(user, permission))
+      return false;
     if (user.hasInlinePermission(permission))
       return true;
     for (Group group : user.getGroups()) {
       if (group.hasPermission(permission))
+        return true;
+    }
+    return false;
+  }
+
+  private static boolean isDenied(User user, Permission permission) {
+    if (user.hasInlineDeny(permission))
+      return true;
+    for (Group group : user.getGroups()) {
+      if (group.deniesPermission(permission))
         return true;
     }
     return false;

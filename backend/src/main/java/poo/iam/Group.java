@@ -20,6 +20,14 @@ public class Group {
     users.remove(user);
   }
 
+  protected void clearUsers() {
+    users.clear();
+  }
+
+  public String getName() {
+    return name;
+  }
+
   // PERMISSIONS
 
   public boolean grantPermission(Permission permission) {
@@ -36,11 +44,40 @@ public class Group {
     return res;
   }
 
+  /** Nega a permissão para todos os membros do grupo. */
+  public boolean denyPermission(Permission permission) {
+    var res = permissionHolder.deny(permission);
+    if (res)
+      System.out.println("(" + name + ") " + "Group permission DENIED: " + permission);
+    return res;
+  }
+
+  /** Remove a negação explícita do grupo. Não concede a permissão. */
+  public boolean allowPermission(Permission permission) {
+    var res = permissionHolder.allow(permission);
+    if (res)
+      System.out.println("(" + name + ") " + "Group permission deny removed: " + permission);
+    return res;
+  }
+
   public boolean hasPermission(Permission permission) {
     return permissionHolder.has(permission);
   }
 
+  public boolean deniesPermission(Permission permission) {
+    return permissionHolder.isDenied(permission);
+  }
+
   public Set<Permission> getPermissions() {
     return permissionHolder.getPermissions();
+  }
+
+  public Set<Permission> getDeniedPermissions() {
+    return permissionHolder.getDeniedPermissions();
+  }
+
+  /** Esvazia as permissões do grupo (concedidas e negadas). */
+  protected void clearPermissions() {
+    permissionHolder.clear();
   }
 }

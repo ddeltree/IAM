@@ -33,7 +33,11 @@ public class Turma implements Resource {
   public List<User> getParticipantes() {
     var res = new ArrayList<User>(alunos);
     res.add(professor);
-    return alunos;
+    return res;
+  }
+
+  public List<User> getAlunos() {
+    return Collections.unmodifiableList(alunos);
   }
 
   public String getNome() {
@@ -76,6 +80,11 @@ public class Turma implements Resource {
 
   public boolean temAluno(String uid) {
     return alunos.stream().anyMatch(aluno -> aluno.getId().equals(uid));
+  }
+
+  /** Reinicia o contador de ids. Existe para isolar os cenários de teste. */
+  public static void resetIdCounter() {
+    proximoId = 1;
   }
 
   @Override

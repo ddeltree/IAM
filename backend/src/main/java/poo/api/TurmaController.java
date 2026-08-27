@@ -19,16 +19,6 @@ public class TurmaController {
     return turmas.get(id);
   }
 
-  public static Turma getTurma(Context ctx) {
-    String id = ctx.pathParam("turmaId");
-    Turma turma = turmas.get(id);
-    if (turma == null) {
-      ctx.status(404).result("Turma nao encontrada");
-      return null;
-    }
-    return turma;
-  }
-
   public static void register(Javalin app) {
     app.get("/turmas", TurmaController::listarTurmas);
     app.get("/turmas/{turmaId}", TurmaController::verTurma);
@@ -54,11 +44,7 @@ public class TurmaController {
   }
 
   private static void verTurma(Context ctx) {
-    Turma turma = turmas.get(ctx.pathParam("turmaId"));
-    if (turma == null) {
-      ctx.status(404).result("Turma não encontrada");
-      return;
-    }
+    var turma = findTurmaOrThrow(ctx);
     if (!Utils.hasPermissionOrThrow(ctx, VER_TURMA, turma))
       return;
     ctx.json(turma);
@@ -75,12 +61,7 @@ public class TurmaController {
   }
 
   private static void atualizarTurma(Context ctx) {
-    var idTurma = ctx.pathParam("turmaId");
-    Turma turma = turmas.get(idTurma);
-    if (turma == null) {
-      ctx.status(404).result("Turma não encontrada");
-      return;
-    }
+    var turma = findTurmaOrThrow(ctx);
     if (!Utils.hasPermissionOrThrow(ctx, SystemPermission.EDITAR_TURMA, turma))
       return;
     TurmaDTO dto = ctx.bodyAsClass(TurmaDTO.class);
@@ -93,6 +74,8 @@ public class TurmaController {
     if (!Utils.hasPermissionOrThrow(ctx, SystemPermission.EXCLUIR_TURMA, turma))
       return;
     turmas.remove(turma.getId());
+    PostController.removerPostsDe(turma);
+    AtividadeController.removerAtividadesDe(turma);
     ctx.status(204);
   }
 
@@ -106,6 +89,11 @@ public class TurmaController {
     if (turma == null)
       throw new NotFoundException("Turma não encontrada");
     return turma;
+  }
+
+  /** Esvazia o repositório em memória. Usado pelos testes. */
+  public static void reset() {
+    turmas.clear();
   }
 
   // DTO para simplificar entrada de dados

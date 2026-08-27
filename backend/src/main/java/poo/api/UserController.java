@@ -34,7 +34,7 @@ public class UserController {
 
   private static void verPerfil(Context ctx) {
     var authUser = Utils.findAuthUserOrThrow(ctx);
-    var profileOwner = usuarios.get(ctx.pathParam("id"));
+    var profileOwner = findUsuarioOrThrow(ctx.pathParam("id"));
     if (!VER_PERFIL.isAllowed(authUser, profileOwner))
       throw new ForbiddenException();
     ctx.json(toDTO(profileOwner));
@@ -64,7 +64,7 @@ public class UserController {
   }
 
   private static void atualizarNome(Context ctx) {
-    var targetUser = getUser(ctx.pathParam("id"));
+    var targetUser = findUsuarioOrThrow(ctx.pathParam("id"));
     if (!Utils.hasPermissionOrThrow(ctx, EDITAR_USUARIO, targetUser))
       return;
     UserDTO dto = ctx.bodyAsClass(UserDTO.class);
@@ -73,11 +73,25 @@ public class UserController {
   }
 
   private static void excluirUsuario(Context ctx) {
-    var targetUser = getUser(ctx.pathParam("id"));
+    var targetUser = findUsuarioOrThrow(ctx.pathParam("id"));
+    if (SecurityContext.getInstance().isAdmin(targetUser))
+      throw new ForbiddenException("O ADMIN não pode ser excluído");
     if (!Utils.hasPermissionOrThrow(ctx, EXCLUIR_USUARIO, targetUser))
       return;
     usuarios.remove(targetUser.getId());
+    for (var group : Set.copyOf(targetUser.getGroups())) {
+      MembershipManager.unlink(targetUser, group);
+    }
     ctx.status(204);
+  }
+
+  private static User findUsuarioOrThrow(String id) {
+    return Utils.findUserOrThrow(id, "Usuário não encontrado");
+  }
+
+  /** Esvazia o repositório em memória. Usado pelos testes. */
+  public static void reset() {
+    usuarios.clear();
   }
 
   // DTO para serialização e entrada de dados

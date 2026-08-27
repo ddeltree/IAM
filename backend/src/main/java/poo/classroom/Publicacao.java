@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import poo.iam.User;
 import poo.iam.resources.Resource;
 
@@ -40,8 +43,19 @@ public abstract class Publicacao implements Resource {
     return autor;
   }
 
+  /**
+   * Ignorado na serialização: a turma lista as próprias publicações, e serializar
+   * os dois lados faria Jackson entrar em recursão infinita. O JSON expõe
+   * {@code turmaId} no lugar.
+   */
+  @JsonIgnore
   public Turma getTurma() {
     return turma;
+  }
+
+  @JsonProperty("turmaId")
+  public String getTurmaId() {
+    return turma == null ? null : turma.getId();
   }
 
   public List<Comentario> getComentarios() {
@@ -50,5 +64,14 @@ public abstract class Publicacao implements Resource {
 
   public void adicionarComentario(Comentario comentario) {
     comentarios.add(comentario);
+  }
+
+  public void removerComentario(Comentario comentario) {
+    comentarios.remove(comentario);
+  }
+
+  /** Reinicia o contador de ids. Existe para isolar os cenários de teste. */
+  public static void resetIdCounter() {
+    proximoId = 1;
   }
 }

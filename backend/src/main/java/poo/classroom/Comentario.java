@@ -1,5 +1,8 @@
 package poo.classroom;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import poo.iam.User;
 import poo.iam.resources.Resource;
 import poo.iam.resources.ResourceTypes;
@@ -37,8 +40,20 @@ public class Comentario implements Resource {
     return autor;
   }
 
+  /** Ignorado na serialização pelo mesmo motivo de {@link Publicacao#getTurma()}. */
+  @JsonIgnore
   public Publicacao getPublicacao() {
     return publicacao;
+  }
+
+  @JsonProperty("publicacaoId")
+  public String getPublicacaoId() {
+    return publicacao == null ? null : publicacao.getId();
+  }
+
+  /** Reinicia o contador de ids. Existe para isolar os cenários de teste. */
+  public static void resetIdCounter() {
+    proximoId = 1;
   }
 
   @Override

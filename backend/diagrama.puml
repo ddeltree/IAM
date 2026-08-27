@@ -11,10 +11,16 @@ skinparam class {
 namespace poo.iam {
   class PermissionHolder {
     -permissions: Set<Permission>
+    -deniedPermissions: Set<Permission>
     +grant(permission: Permission): boolean
     +revoke(permission: Permission): boolean
     +has(permission: Permission): boolean
+    +deny(permission: Permission): boolean
+    +allow(permission: Permission): boolean
+    +isDenied(permission: Permission): boolean
     +getPermissions(): Set<Permission>
+    +getDeniedPermissions(): Set<Permission>
+    +clear(): void
   }
 
 
@@ -115,8 +121,12 @@ namespace poo.iam {
     +User(name: String)
     +grantPermission(permission: Permission): boolean
     +revokePermission(permission: Permission): boolean
-    +hasInlinePermission(permission: Permission): boolean
+    +denyPermission(permission: Permission): boolean
+    +allowPermission(permission: Permission): boolean
+    #hasInlinePermission(permission: Permission): boolean
+    #hasInlineDeny(permission: Permission): boolean
     +getInlinePermissions(): Set<Permission>
+    +getDeniedPermissions(): Set<Permission>
     +joinGroup(group: Group): void
     +quitGroup(group: Group): void
     +getGroups(): Set<Group>
@@ -135,8 +145,12 @@ namespace poo.iam {
     +Group(name: String)
     +grantPermission(permission: Permission): boolean
     +revokePermission(permission: Permission): boolean
+    +denyPermission(permission: Permission): boolean
+    +allowPermission(permission: Permission): boolean
     +hasPermission(permission: Permission): boolean
+    +deniesPermission(permission: Permission): boolean
     +getPermissions(): Set<Permission>
+    +getDeniedPermissions(): Set<Permission>
     #addUser(user: User): void
     #removeUser(user: User): void
   }
@@ -156,6 +170,7 @@ namespace poo.iam {
     +isAluno(user: User): boolean
     +isAdmin(user: User): boolean
     +isAdmin(uid: String): boolean
+    +reset(): void
   }
 
   class MembershipManager {
@@ -203,7 +218,8 @@ User "1" -- "*" Group
 Group "1" *-- "1" PermissionHolder
 Group "1" -- "*" User
 
-PermissionHolder "1" o-- "*" Permission
+PermissionHolder "1" o-- "*" Permission : concedidas
+PermissionHolder "1" o-- "*" Permission : negadas
 
 SystemPermission --> Action
 SystemPermission --> ResourceTypes
