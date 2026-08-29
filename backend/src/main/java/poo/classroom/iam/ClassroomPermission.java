@@ -28,15 +28,15 @@ public enum ClassroomPermission {
   LISTAR_POSTS(ClassroomAction.LISTAR_POSTS, TURMA),
   LISTAR_COMENTARIOS(ClassroomAction.LISTAR_COMENTARIOS, TURMA),
   LISTAR_PARTICIPANTES(ClassroomAction.LISTAR_PARTICIPANTES, TURMA),
-  LISTAR_USUARIOS(ClassroomAction.LISTAR_USUARIOS, PrincipalResource.USUARIO),
+  LISTAR_USUARIOS(ClassroomAction.LISTAR_USUARIOS, PrincipalResource.USUARIO, Escopo.GLOBAL),
   VER_PERFIL(ClassroomAction.VER_PERFIL, PrincipalResource.USUARIO),
 
-  CRIAR_TURMA(ClassroomAction.CRIAR_TURMA, TURMA),
+  CRIAR_TURMA(ClassroomAction.CRIAR_TURMA, TURMA, Escopo.GLOBAL),
   CRIAR_ATIVIDADE(ClassroomAction.CRIAR_ATIVIDADE, TURMA),
   CRIAR_POST(ClassroomAction.CRIAR_POST, TURMA),
   CRIAR_COMENTARIO(ClassroomAction.CRIAR_COMENTARIO, TURMA),
-  CRIAR_PROFESSOR(ClassroomAction.CRIAR_PROFESSOR, PrincipalResource.USUARIO),
-  CRIAR_ALUNO(ClassroomAction.CRIAR_ALUNO, PrincipalResource.USUARIO),
+  CRIAR_PROFESSOR(ClassroomAction.CRIAR_PROFESSOR, PrincipalResource.USUARIO, Escopo.GLOBAL),
+  CRIAR_ALUNO(ClassroomAction.CRIAR_ALUNO, PrincipalResource.USUARIO, Escopo.GLOBAL),
 
   EDITAR_TURMA(ClassroomAction.EDITAR_TURMA, TURMA),
   EDITAR_ATIVIDADE(ClassroomAction.EDITAR_ATIVIDADE, ATIVIDADE),
@@ -53,10 +53,34 @@ public enum ClassroomPermission {
   MATRICULAR_ALUNO(ClassroomAction.MATRICULAR_ALUNO, TURMA),
   DESMATRICULAR_ALUNO(ClassroomAction.DESMATRICULAR_ALUNO, TURMA);
 
+  /**
+   * Ações sem alvo (criar uma turma, listar usuários) não fazem sentido num
+   * mapa de permissões efetivas sobre um recurso — este escopo é o que as
+   * separa.
+   */
+  public enum Escopo {
+    GLOBAL,
+    RECURSO,
+  }
+
   private final Permission permission;
+  private final Escopo escopo;
 
   ClassroomPermission(Action action, ResourceType resourceType) {
+    this(action, resourceType, Escopo.RECURSO);
+  }
+
+  ClassroomPermission(Action action, ResourceType resourceType, Escopo escopo) {
     this.permission = new Permission(action, resourceType);
+    this.escopo = escopo;
+  }
+
+  public Escopo getEscopo() {
+    return escopo;
+  }
+
+  public ResourceType getResourceType() {
+    return permission.getResourceType();
   }
 
   public boolean isAllowed(User user, Resource resource, Object... context) {

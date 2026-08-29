@@ -4,6 +4,7 @@ import io.javalin.Javalin;
 import poo.api.AtividadeController;
 import poo.api.ComentarioController;
 import poo.api.ParticipantesController;
+import poo.api.PermissoesController;
 import poo.api.PostController;
 import poo.api.TurmaController;
 import poo.api.UserController;
@@ -48,6 +49,7 @@ public class Main {
         ComentarioController.register(app);
         UserController.register(app);
         ParticipantesController.register(app);
+        PermissoesController.register(app);
 
         return app;
     }

@@ -14,6 +14,10 @@ public class ComentarioController {
 
   private static final Map<String, Comentario> comentarios = new HashMap<>();
 
+  public static Comentario get(String id) {
+    return comentarios.get(id);
+  }
+
   public static void register(Javalin app) {
     app.get("/turmas/{turmaId}/{publicacao}/{pubId}/comentarios", ComentarioController::listar);
     app.get("/turmas/{turmaId}/{publicacao}/{pubId}/comentarios/{id}", ComentarioController::ver);

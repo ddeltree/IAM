@@ -14,6 +14,10 @@ public class AtividadeController {
 
   private static final Map<String, Atividade> atividades = new HashMap<>();
 
+  public static Atividade get(String id) {
+    return atividades.get(id);
+  }
+
   public static void register(Javalin app) {
     app.get("/atividades", AtividadeController::listar);
     app.get("/atividades/{id}", AtividadeController::ver);
