@@ -67,6 +67,12 @@ public class User implements Resource {
     return policy;
   }
 
+  /** As cláusulas inline, para inspeção — é o que permite imprimir a política. */
+  @JsonIgnore
+  public Set<Statement> getStatements() {
+    return policy.getStatements();
+  }
+
   @JsonIgnore
   public Set<Permission> getInlinePermissions() {
     return policy.getPermissions();

@@ -1,6 +1,7 @@
 package poo.api;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.javalin.Javalin;
@@ -9,6 +10,7 @@ import poo.classroom.iam.ClassroomResource;
 import poo.classroom.iam.PermissoesEfetivas;
 import poo.classroom.iam.SecurityContext;
 import poo.iam.Decisao;
+import poo.iam.PolicyJson;
 import poo.iam.PrincipalResource;
 import poo.iam.Resource;
 import poo.iam.User;
@@ -25,6 +27,23 @@ public class PermissoesController {
 
   public static void register(Javalin app) {
     app.get("/permissoes", PermissoesController::consultar);
+    app.get("/iam/politicas", PermissoesController::politicas);
+  }
+
+  /**
+   * A política de cada principal, como documento — o análogo do
+   * {@code GetAccountAuthorizationDetails} da AWS.
+   *
+   * Só o ADMIN: a política diz quem alcança o quê, o que é informação de
+   * administração e não de uso.
+   */
+  private static void politicas(Context ctx) {
+    Utils.hasPermissionOrThrow(ctx, poo.classroom.iam.ClassroomPermission.LISTAR_USUARIOS);
+    var auth = SecurityContext.getInstance();
+    ctx.json(List.of(
+        PolicyJson.deUsuario(auth.getAdmin()),
+        PolicyJson.deGrupo(auth.getProfessores()),
+        PolicyJson.deGrupo(auth.getAlunos())));
   }
 
   /**

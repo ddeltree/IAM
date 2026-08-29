@@ -78,6 +78,11 @@ public class Group {
     return policy.isDenied(permission);
   }
 
+  /** As cláusulas do grupo, para inspeção. */
+  public Set<Statement> getStatements() {
+    return policy.getStatements();
+  }
+
   public Set<Permission> getPermissions() {
     return policy.getPermissions();
   }
