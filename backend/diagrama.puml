@@ -19,10 +19,6 @@ namespace poo.iam {
     +name(): String
   }
 
-  interface Resource <<interface>> {
-    +getType(): ResourceType
-  }
-
   enum PrincipalResource <<enum>> {
     USUARIO
     GRUPO
@@ -42,17 +38,51 @@ namespace poo.iam {
     +hashCode(): int
   }
 
-  interface PermissionCondition <<FunctionalInterface>> {
-    +SEMPRE: PermissionCondition {static}
-    +test(user: User, resource: Resource, context: Object...): boolean
-    +or(outra: PermissionCondition): PermissionCondition
-    +and(outra: PermissionCondition): PermissionCondition
+  interface Resource <<interface>> {
+    +getType(): ResourceType
+    +getId(): String
+    +getPai(): Resource
+  }
+
+  class RequestContext {
+    -valores: Map<String, List<String>>
+    +get(chave: String): List<String>
+    +has(chave: String): boolean
+  }
+
+  interface AttributeProvider <<interface>> {
+    +tipo(): ResourceType
+    +atributosDe(r: Resource): Map<String, List<String>>
+  }
+
+  class ContextResolver {
+    -provedores: Map<ResourceType, AttributeProvider>
+    +registrar(p: AttributeProvider): void
+    +resolver(principal: User, alvo: Resource, extra: Object...): RequestContext
+  }
+
+  class Decisao {
+    +tipo(): Tipo
+    +decisiva(): Statement
+    +origem(): String
+    +permitido(): boolean
+  }
+
+  class PolicyJson <<utility>> {
+    +deUsuario(u: User): Map {static}
+    +deGrupo(g: Group): Map {static}
+  }
+
+  interface PrincipalDirectory <<interface>> {
+    +usuarios(): Collection<User>
+    +grupos(): Collection<Group>
   }
 
   class Statement {
+    -sid: String
     -effect: Effect
     -permission: Permission
-    -condition: PermissionCondition
+    -condition: Condition
     +allow(p: Permission): Statement {static}
     +allow(p: Permission, c: PermissionCondition): Statement {static}
     +deny(p: Permission): Statement {static}
@@ -78,8 +108,7 @@ namespace poo.iam {
 
   class AccessResolver <<utility>> {
     +isAllowed(user: User, p: Permission, r: Resource, ctx: Object...): boolean {static}
-    -nega(...): boolean {static}
-    -permite(...): boolean {static}
+    +avaliar(user, p, r, ctx...): Decisao {static}
   }
 
   class User implements Resource {
@@ -114,6 +143,83 @@ namespace poo.iam {
     +link(user: User, group: Group): void {static}
     +unlink(user: User, group: Group): void {static}
   }
+}
+
+' =====================================================================
+' A CONDIÇÃO COMO DADO — Composite + Visitor. É por ser árvore, e não
+' lambda, que a política pode ser impressa, explicada e consultada.
+' =====================================================================
+namespace poo.iam.condition {
+
+  interface Condition <<interface>> {
+    +avaliar(ctx: RequestContext): boolean
+    +chaves(): Set<String>
+    +accept(v: ConditionVisitor): R
+  }
+
+  interface ConditionVisitor <<interface>> {
+    +visitarSempre() / visitarComparacao()
+    +visitarTodasAs() / visitarAlgumaDas()
+    +visitarNegacao() / visitarOpaca()
+  }
+
+  class Comparacao {
+    -operador: ConditionOperator
+    -chave: String
+    -valores: List<String>
+  }
+  class TodasAs
+  class AlgumaDas
+  class Negacao
+  class Sempre
+  class CondicaoOpaca {
+    -legado: PermissionCondition
+  }
+
+  interface ConditionOperator <<interface>> {
+    +name(): String
+    +testar(doContexto, daPolitica): boolean
+  }
+
+  class Operadores <<utility>> {
+    +IGUAL / DIFERENTE / PARECIDO {static}
+    +BOOLEANO / NULO {static}
+    +paraAlgumValor(base): ConditionOperator {static}
+  }
+
+  class ConditionJson <<utility>> {
+    +escrever(c: Condition): Object {static}
+    +ler(node: JsonNode): Condition {static}
+  }
+}
+
+' =====================================================================
+' AS CONSULTAS — o que o motor passou a saber responder quando a
+' condição virou dado.
+' =====================================================================
+namespace poo.iam.query {
+
+  class PolicyQuery {
+    +quemPode(p, recurso): Resultado
+    +quemPodeVarrendo(p, recurso): List<User>
+    +ondePosso(principal, p): ResourceConstraint
+    +filtrar(principal, p, candidatos): List
+  }
+
+  class PrincipalConstraintExtractor {
+    ' fixa o recurso, deixa o principal em aberto
+    +extrair(c: Condition, doRecurso): PrincipalConstraint {static}
+  }
+
+  interface ResourceConstraint <<interface>> {
+    ' fixa o principal, deixa o recurso em aberto
+    +accept(v: ConstraintVisitor): R
+  }
+
+  class ResourceConstraintExtractor
+  class PredicateRenderer
+  class SqlWhereRenderer
+  interface SqlMapping <<interface>>
 }
 
 ' =====================================================================
@@ -159,12 +265,27 @@ namespace poo.classroom.iam {
   }
 
   class ClassroomConditions <<utility>> {
-    +PROFESSOR_RESPONSAVEL: PermissionCondition {static}
-    +ALUNO_MATRICULADO: PermissionCondition {static}
-    +PARTICIPANTE: PermissionCondition {static}
-    +AUTOR: PermissionCondition {static}
-    +PROPRIO_USUARIO: PermissionCondition {static}
-    -turmaDe(resource: Resource): Turma {static}
+    +PROFESSOR_RESPONSAVEL: Condition {static}
+    +ALUNO_MATRICULADO: Condition {static}
+    +PARTICIPANTE: Condition {static}
+    +AUTOR: Condition {static}
+    +PROPRIO_USUARIO: Condition {static}
+  }
+
+  class ClassroomAttributes <<utility>> {
+    ' lê a chave de dentro do objeto
+    +registrarTodos(r: ContextResolver): void {static}
+  }
+
+  class ClassroomSqlMapping {
+    ' escreve a mesma chave em SQL
+    +igual(chave, valor): String
+    +contem(chave, valor): String
+  }
+
+  class PermissoesEfetivas <<utility>> {
+    +sobre(user: User, r: Resource): Map<String, Boolean> {static}
+    +globais(user: User): Map<String, Boolean> {static}
   }
 
   enum ClassroomPermission <<enum>> {
@@ -208,7 +329,26 @@ MembershipManager ..> Group
 PermissionHolder "1" o-- "*" Statement
 Statement --> Effect
 Statement --> Permission
-Statement --> PermissionCondition
+Statement --> Condition
+AccessResolver ..> Decisao
+AccessResolver ..> ContextResolver
+ContextResolver ..> AttributeProvider
+ContextResolver ..> RequestContext
+Condition ..> RequestContext
+Comparacao ..|> Condition
+TodasAs ..|> Condition
+AlgumaDas ..|> Condition
+Negacao ..|> Condition
+Sempre ..|> Condition
+CondicaoOpaca ..|> Condition
+Comparacao --> ConditionOperator
+ConditionJson ..> ConditionVisitor
+PolicyQuery ..> PrincipalDirectory
+PolicyQuery ..> PrincipalConstraintExtractor
+PolicyQuery ..> ResourceConstraintExtractor
+PredicateRenderer ..> ResourceConstraint
+SqlWhereRenderer ..> ResourceConstraint
+SqlWhereRenderer --> SqlMapping
 Permission --> Action
 Permission --> ResourceType
 PrincipalResource ..|> ResourceType
@@ -221,7 +361,10 @@ ClassroomAction ..|> Action
 ClassroomResource ..|> ResourceType
 ClassroomPermission --> Permission
 ClassroomPermission ..> AccessResolver
-ClassroomConditions ..> PermissionCondition
+ClassroomConditions ..> Condition
+ClassroomAttributes ..|> AttributeProvider
+ClassroomSqlMapping ..|> SqlMapping
+PermissoesEfetivas ..> ClassroomPermission
 SecurityContext "1" *-- "1" User : admin
 SecurityContext "1" *-- "2" Group : alunos, professores
 SecurityContext ..> ClassroomPermission
@@ -234,6 +377,18 @@ note bottom of SecurityContext
 
   admin.grant(EDITAR_POST)
   professores.grant(EDITAR_POST, AUTOR)
+end note
+
+note bottom of SqlWhereRenderer
+  Um vocabulário de chaves, dois sentidos:
+  ClassroomAttributes  lê  turma:professorId
+    de dentro de uma Turma;
+  ClassroomSqlMapping  escreve a mesma chave
+    como turma.professor_id = ?
+
+  O mesmo ResourceConstraint vira predicado
+  em memória ou cláusula WHERE — sem que a
+  política mude.
 end note
 
 note top of AccessResolver
