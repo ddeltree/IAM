@@ -1,6 +1,7 @@
 package poo.iam.query;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -97,6 +98,43 @@ public final class PolicyQuery {
     }
 
     return new ArrayList<>(candidatos);
+  }
+
+  /**
+   * O dual: dado um principal e uma ação, o filtro sobre os recursos que ele
+   * alcança. Vale a mesma regra — o filtro escolhe candidatos, o motor decide.
+   */
+  public ResourceConstraint ondePosso(User principal, Permission permissao) {
+    var doPrincipal = ContextResolver.padrao().resolver(principal, null);
+    var partes = new ArrayList<ResourceConstraint>();
+
+    for (Statement statement : concessoes(principal.getStatements(), permissao))
+      partes.add(ResourceConstraintExtractor.extrair(statement.getCondition(), doPrincipal));
+
+    for (Group grupo : diretorio.grupos()) {
+      if (!grupo.getUsers().contains(principal))
+        continue;
+      for (Statement statement : concessoes(grupo.getStatements(), permissao))
+        partes.add(ResourceConstraintExtractor.extrair(statement.getCondition(), doPrincipal));
+    }
+
+    if (partes.isEmpty())
+      return ResourceConstraint.Nada.INSTANCIA;
+    // as concessões se somam: alcança o que qualquer uma delas alcançar
+    return partes.size() == 1 ? partes.get(0) : new ResourceConstraint.Alguma(partes);
+  }
+
+  /**
+   * Aplica o filtro e confirma cada sobrevivente com o motor — é o que impede
+   * um erro na extração de virar acesso indevido.
+   */
+  public <T extends Resource> List<T> filtrar(User principal, Permission permissao,
+      Collection<T> candidatos) {
+    var filtro = PredicateRenderer.render(ondePosso(principal, permissao));
+    return candidatos.stream()
+        .filter(filtro)
+        .filter(r -> AccessResolver.isAllowed(principal, permissao, r))
+        .toList();
   }
 
   private static List<Statement> concessoes(Set<Statement> statements, Permission permissao) {

@@ -14,7 +14,9 @@ import poo.iam.Decisao;
 import poo.iam.Group;
 import poo.iam.PolicyJson;
 import poo.iam.PrincipalDirectory;
+import poo.classroom.iam.ClassroomSqlMapping;
 import poo.iam.query.PolicyQuery;
+import poo.iam.query.SqlWhereRenderer;
 import poo.iam.PrincipalResource;
 import poo.iam.Resource;
 import poo.iam.User;
@@ -33,6 +35,35 @@ public class PermissoesController {
     app.get("/permissoes", PermissoesController::consultar);
     app.get("/iam/politicas", PermissoesController::politicas);
     app.get("/permissoes/quem-pode", PermissoesController::quemPode);
+    app.get("/permissoes/onde-posso", PermissoesController::ondePosso);
+  }
+
+  /**
+   * O dual da anterior: sobre quais recursos o usuário alcança esta ação.
+   *
+   * Devolve o filtro que a política produz — em texto, e também traduzido para
+   * SQL, para mostrar que a mesma restrição vale em memória e no banco.
+   */
+  private static void ondePosso(Context ctx) {
+    var user = Utils.findAuthUserOrThrow(ctx);
+    var acao = ctx.queryParam("acao");
+    if (acao == null)
+      throw new poo.api.exceptions.NotFoundException("Informe a acao");
+
+    var permissao = ClassroomPermission.valueOf(acao).get();
+    var consulta = new PolicyQuery(DIRETORIO);
+    var filtro = consulta.ondePosso(user, permissao);
+
+    // aplicado às turmas: o filtro escolhe candidatos, o motor confirma
+    var turmas = consulta.filtrar(user, permissao, TurmaController.todas()).stream()
+        .map(t -> Map.of("id", t.getId(), "nome", t.getNome()))
+        .toList();
+
+    ctx.json(Map.of(
+        "acao", acao,
+        "filtro", filtro.toString(),
+        "sql", SqlWhereRenderer.render(filtro, new ClassroomSqlMapping()),
+        "turmas", turmas));
   }
 
   /**

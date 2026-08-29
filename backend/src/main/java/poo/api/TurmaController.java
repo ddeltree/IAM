@@ -19,6 +19,11 @@ public class TurmaController {
     return turmas.get(id);
   }
 
+  /** Todas as turmas. Usado pelas consultas do IAM. */
+  public static java.util.Collection<Turma> todas() {
+    return turmas.values();
+  }
+
   public static void register(Javalin app) {
     app.get("/turmas", TurmaController::listarTurmas);
     app.get("/turmas/{turmaId}", TurmaController::verTurma);
