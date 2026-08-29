@@ -1,44 +1,67 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { useUser } from '../providers/UserProvider'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
+import { useSWRConfig } from 'swr'
+import { criarTurma } from '@/lib/api'
+import { podeCriarTurma } from '@/lib/permissoes'
+import { useSessao } from '@/providers/SessaoProvider'
 import TituloFrame from './TituloFrame'
+import ErroApi, { SemPermissao } from './ErroApi'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function CriarTurma() {
-  const [nome, setNome] = useState<string>('')
-  const { user } = useUser()
+  const [nome, setNome] = useState('')
+  const [erro, setErro] = useState<unknown>(null)
+  const [salvando, setSalvando] = useState(false)
+  const { sessao } = useSessao()
+  const { mutate } = useSWRConfig()
   const navigate = useNavigate()
+
+  if (!sessao) return null
+  if (!podeCriarTurma(sessao))
+    return (
+      <TituloFrame titulo="Nova turma">
+        <SemPermissao>
+          Apenas professores podem criar turmas. O administrador modera o
+          conteúdo, mas não o cria.
+        </SemPermissao>
+      </TituloFrame>
+    )
+
   return (
     <TituloFrame titulo="Nova turma">
-      <div className="flex max-w-sm flex-col gap-2">
-        <Label htmlFor="nome" className="space-x-1">
-          <span>Nome:</span>
-          <Input type="text" onChange={(e) => setNome(e.target.value)} />
-        </Label>
-        <Button
-          className="self-end"
-          onClick={async () => {
-            if (!nome.trim() || !user) return
-            await criar(nome, user.id)
-            navigate('/')
-          }}
-        >
-          Criar
+      <form
+        className="flex max-w-sm flex-col gap-3"
+        onSubmit={async (e) => {
+          e.preventDefault()
+          if (!nome.trim()) return
+          setSalvando(true)
+          setErro(null)
+          try {
+            const turma = await criarTurma(nome.trim())
+            await mutate([sessao.id, 'turmas'])
+            navigate(`/turmas/${turma.id}`)
+          } catch (err) {
+            setErro(err)
+          } finally {
+            setSalvando(false)
+          }
+        }}
+      >
+        <div className="grid gap-1">
+          <Label htmlFor="nome">Nome</Label>
+          <Input
+            id="nome"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+          />
+        </div>
+        {erro != null && <ErroApi erro={erro} />}
+        <Button type="submit" className="self-end" disabled={salvando}>
+          {salvando ? 'Criando...' : 'Criar'}
         </Button>
-      </div>
+      </form>
     </TituloFrame>
   )
-}
-
-async function criar(nome: string, professorId: string) {
-  const response = await fetch('http://localhost:7000/turmas', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ nome, professorId }),
-  })
-  return response.json()
 }

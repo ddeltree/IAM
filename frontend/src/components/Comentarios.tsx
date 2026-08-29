@@ -1,100 +1,195 @@
-import { useUser } from '@/providers/UserProvider'
-import useSWR from 'swr'
-import { Textarea } from './ui/textarea'
-import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar'
-import { Button } from '@/components/ui/button'
 import { useState } from 'react'
+import useSWR from 'swr'
+import {
+  atualizarComentario,
+  criarComentario,
+  excluirComentario,
+  listarComentarios,
+} from '@/lib/api'
+import {
+  podeCriarComentario,
+  podeEditarComentario,
+  podeExcluirComentario,
+} from '@/lib/permissoes'
+import { useSessao } from '@/providers/SessaoProvider'
+import type { Comentario, TipoPublicacao, Turma } from '@/lib/types'
+import ErroApi from './ErroApi'
+import UsuarioAvatar from './UsuarioAvatar'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
 
-export default function Comentarios({ postId }: { postId: string }) {
-  const { user } = useUser()
-  const { data, error, isLoading, mutate } = useSWR('comentarios', listar)
+/**
+ * Recebe a turma inteira (e não só o id) porque a regra de exclusão precisa
+ * saber quem é o professor responsável: ele apaga qualquer comentário da turma.
+ */
+export default function Comentarios({
+  turma,
+  tipo,
+  pubId,
+}: {
+  turma: Turma
+  tipo: TipoPublicacao
+  pubId: string
+}) {
+  const { sessao } = useSessao()
   const [conteudo, setConteudo] = useState('')
+  const [erroAcao, setErroAcao] = useState<unknown>(null)
 
-  if (error) return <div>Erro ao listar comentários</div>
-  if (isLoading) return <div>Carregando...</div>
+  const { data, error, isLoading, mutate } = useSWR(
+    sessao ? [sessao.id, 'comentarios', turma.id, tipo, pubId] : null,
+    () => listarComentarios(turma.id, tipo, pubId),
+  )
+
+  if (!sessao) return null
+  if (error != null) return <ErroApi erro={error} className="mt-4" />
+
   return (
     <div className="mt-6 space-y-4 rounded-xl border p-4">
-      <ul>
-        {data?.length === 0 && <p>Nenhum comentário</p>}
-        {data?.map((comentario: any) => (
-          <li key={comentario.id}>
-            <p>{comentario.conteudo}</p>
-            <p>{comentario.autor.name}</p>
-            {comentario.autor.id === user?.id && (
-              <button onClick={() => excluir(comentario.id)}>Excluir</button>
-            )}
-          </li>
-        ))}
-      </ul>
+      {isLoading ? (
+        <Skeleton className="h-12 w-full" />
+      ) : data?.length === 0 ? (
+        <p className="text-muted-foreground text-sm italic">
+          Nenhum comentário ainda.
+        </p>
+      ) : (
+        <ul className="space-y-3">
+          {data?.map((comentario) => (
+            <ItemComentario
+              key={comentario.id}
+              comentario={comentario}
+              turma={turma}
+              tipo={tipo}
+              pubId={pubId}
+              onMudou={() => mutate()}
+            />
+          ))}
+        </ul>
+      )}
 
-      <div className="flex w-full items-start gap-2">
-        <Avatar className="h-12 w-12">
-          <AvatarImage src="https://github.com/shadcn.png" />
-          <AvatarFallback>EU</AvatarFallback>
-        </Avatar>
-        <div className="w-full space-y-0.5">
-          <Textarea
-            placeholder="Escreva um comentário"
-            onChange={(e) => setConteudo(e.target.value)}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            className="float-right"
-            onClick={async () => {
-              if (!conteudo.trim() || !user) return
-              await criar(conteudo, user.id, postId)
-              mutate()
-            }}
-          >
-            Enviar
-          </Button>
+      {erroAcao != null && <ErroApi erro={erroAcao} />}
+
+      {podeCriarComentario(sessao, turma) && (
+        <div className="flex w-full items-start gap-2">
+          <UsuarioAvatar nome={sessao.name} />
+          <div className="w-full space-y-1">
+            <Textarea
+              placeholder="Escreva um comentário"
+              value={conteudo}
+              onChange={(e) => setConteudo(e.target.value)}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="float-right"
+              onClick={async () => {
+                if (!conteudo.trim()) return
+                setErroAcao(null)
+                try {
+                  await criarComentario(turma.id, tipo, pubId, conteudo.trim())
+                  setConteudo('')
+                  mutate()
+                } catch (e) {
+                  setErroAcao(e)
+                }
+              }}
+            >
+              Enviar
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
 
-async function listar() {
-  const response = await fetch('http://localhost:7000/comentarios')
-  const comments = await response.json()
-  return comments as Record<string, any>[]
-}
+function ItemComentario({
+  comentario,
+  turma,
+  tipo,
+  pubId,
+  onMudou,
+}: {
+  comentario: Comentario
+  turma: Turma
+  tipo: TipoPublicacao
+  pubId: string
+  onMudou: () => void
+}) {
+  const { sessao } = useSessao()
+  const [editando, setEditando] = useState(false)
+  const [texto, setTexto] = useState(comentario.conteudo)
+  if (!sessao) return null
 
-async function criar(conteudo: string, autorId: string, postId: string) {
-  const response = await fetch('http://localhost:7000/comentarios', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      conteudo,
-      autorId,
-      postId,
-    }),
-  })
-  return response.json()
-}
+  return (
+    <li className="flex items-start gap-2">
+      <UsuarioAvatar nome={comentario.autor.name} className="h-8 w-8" />
+      <div className="w-full">
+        <p className="text-xs font-medium">{comentario.autor.name}</p>
+        {editando ? (
+          <div className="space-y-1">
+            <Textarea
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+            />
+            <div className="flex justify-end gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setTexto(comentario.conteudo)
+                  setEditando(false)
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  if (!texto.trim()) return
+                  await atualizarComentario(
+                    turma.id,
+                    tipo,
+                    pubId,
+                    comentario.id,
+                    texto.trim(),
+                  )
+                  setEditando(false)
+                  onMudou()
+                }}
+              >
+                Salvar
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm">{comentario.conteudo}</p>
+        )}
+      </div>
 
-async function excluir(id: string) {
-  const response = await fetch(`http://localhost:7000/comentarios/${id}`, {
-    method: 'DELETE',
-  })
-  return response.text()
-}
-
-async function ver(id: string | undefined) {
-  if (!id) return
-  const response = await fetch(`http://localhost:7000/comentarios/${id}`)
-  const comentario = await response.json()
-  return comentario as Record<string, any>
-}
-
-async function atualizar(id: string, conteudo: string) {
-  const response = await fetch(`http://localhost:7000/comentarios/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify({ conteudo }),
-  })
-  const comentario = await response.json()
-  return comentario as Record<string, any>
+      {!editando && (
+        <div className="ml-auto flex shrink-0 gap-1">
+          {/* Editar é do autor; excluir também vale para a moderação da turma. */}
+          {podeEditarComentario(sessao, comentario) && (
+            <Button size="sm" variant="ghost" onClick={() => setEditando(true)}>
+              Editar
+            </Button>
+          )}
+          {podeExcluirComentario(sessao, comentario, turma) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-destructive"
+              onClick={async () => {
+                await excluirComentario(turma.id, tipo, pubId, comentario.id)
+                onMudou()
+              }}
+            >
+              Excluir
+            </Button>
+          )}
+        </div>
+      )}
+    </li>
+  )
 }

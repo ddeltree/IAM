@@ -1,27 +1,43 @@
-import { useParams } from 'react-router'
-import useSWR from 'swr'
-import AtividadeSkeletonCard from './AtividadeSkeletonCard'
+import { useNavigate, useParams } from 'react-router'
+import useSWR, { useSWRConfig } from 'swr'
 import { ClipboardList } from 'lucide-react'
-import { Separator } from '@/components/ui/separator'
+import { atualizarAtividade, excluirAtividade, verAtividade } from '@/lib/api'
+import { podeEditarAtividade, podeExcluirAtividade } from '@/lib/permissoes'
+import { useSessao } from '@/providers/SessaoProvider'
+import { useTurma } from './layout/TurmaLayout'
+import { AlertaExclusao, AtividadeDialog } from './AtividadeDialog'
+import { formatarEntrega } from './Atividades'
+import AtividadeSkeletonCard from './AtividadeSkeletonCard'
 import Comentarios from './Comentarios'
-import { AlertaExclusao, atualizar, DialogDemo } from './Atividades'
+import ErroApi from './ErroApi'
+import { Separator } from '@/components/ui/separator'
+
 export default function Atividade() {
-  const params = useParams()
-  const id = params['id']
+  const { atividadeId } = useParams()
+  const { turma } = useTurma()
+  const { sessao } = useSessao()
+  const { mutate: mutateGlobal } = useSWRConfig()
+  const navigate = useNavigate()
+
   const {
     data: atividade,
     error,
     isLoading,
     mutate,
-  } = useSWR(`atividades/${id}`, () => ver(id))
-  if (error) return <div>Erro ao buscar atividade</div>
+  } = useSWR(
+    sessao && atividadeId ? [sessao.id, 'atividade', atividadeId] : null,
+    () => verAtividade(atividadeId!),
+  )
+
+  if (!sessao) return null
+  if (error != null) return <ErroApi erro={error} />
   if (isLoading)
     return (
       <div className="flex justify-center">
         <AtividadeSkeletonCard />
       </div>
     )
-  if (!atividade) return <div>Atividade nao encontrada</div>
+  if (!atividade) return <p className="italic">Atividade não encontrada</p>
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -33,40 +49,43 @@ export default function Atividade() {
           <h2 className="text-2xl font-semibold">{atividade.titulo}</h2>
         </div>
         <Separator className="mt-1 mb-3" />
-        <div className="w-full">
-          <p className="text-left">{atividade.corpo}</p>
-        </div>
+        <p className="text-left whitespace-pre-wrap">{atividade.corpo}</p>
 
-        <div className="text-secondary-foreground flex items-baseline justify-between text-xs">
-          <p>Data de entrega: {atividade.dataEntrega}</p>
-          <div>
-            <DialogDemo
-              {...{
-                confirmarDialog: 'Salvar mudanças',
-                descricaoDialog: 'Dẽ uma nova descrição para a atividade',
-                tituloDialog: 'Editar atividade',
-                onConfirmar: async (titulo, corpo, turmaId, date) => {
-                  if (!titulo.trim() || !corpo.trim() || !turmaId || !date)
-                    return
-                  await atualizar(atividade.id, titulo, corpo, date)
+        <div className="text-secondary-foreground mt-3 flex items-baseline justify-between text-xs">
+          <p>Entrega: {formatarEntrega(atividade.dataEntrega)}</p>
+          <div className="flex gap-2">
+            {podeEditarAtividade(sessao, turma) && (
+              <AtividadeDialog
+                rotulo="Editar"
+                titulo="Editar atividade"
+                descricao="Dê uma nova descrição para a atividade"
+                confirmar="Salvar mudanças"
+                valorInicial={{
+                  titulo: atividade.titulo,
+                  corpo: atividade.corpo,
+                  dataEntrega: atividade.dataEntrega ?? '',
+                }}
+                onConfirmar={async (dados) => {
+                  await atualizarAtividade(atividade.id, dados)
                   mutate()
-                },
-              }}
-            />
-            <AlertaExclusao idAtividade={atividade.id} onExcluir={mutate} />
+                }}
+              />
+            )}
+            {podeExcluirAtividade(sessao, turma) && (
+              <AlertaExclusao
+                onExcluir={async () => {
+                  await excluirAtividade(atividade.id)
+                  await mutateGlobal([sessao.id, 'atividades', turma.id])
+                  navigate(`/turmas/${turma.id}/atividades`, { replace: true })
+                }}
+              />
+            )}
           </div>
         </div>
         <Separator className="mt-1 mb-3" />
 
-        <Comentarios postId={atividade.id} />
+        <Comentarios turma={turma} tipo="atividades" pubId={atividade.id} />
       </div>
     </div>
   )
-}
-
-async function ver(id: string | undefined) {
-  if (!id) return
-  const response = await fetch(`http://localhost:7000/atividades/${id}`)
-  const atividade = await response.json()
-  return atividade as Record<string, any>
 }

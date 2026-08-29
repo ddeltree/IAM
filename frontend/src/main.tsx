@@ -3,14 +3,21 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { BrowserRouter } from 'react-router'
-import { UserProvider } from './providers/UserProvider.tsx'
+import { SWRConfig } from 'swr'
+import { SessaoProvider } from './providers/SessaoProvider.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <UserProvider>
-        <App />
-      </UserProvider>
+      {/* 403 é resposta normal aqui; sem isto o SWR ficaria repetindo a
+          requisição negada em backoff exponencial. */}
+      <SWRConfig
+        value={{ revalidateOnFocus: false, shouldRetryOnError: false }}
+      >
+        <SessaoProvider>
+          <App />
+        </SessaoProvider>
+      </SWRConfig>
     </BrowserRouter>
   </StrictMode>,
 )

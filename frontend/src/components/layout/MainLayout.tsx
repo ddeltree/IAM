@@ -1,22 +1,33 @@
-import { Link, Outlet } from 'react-router'
-import { useUser } from '../../providers/UserProvider'
-import { cn } from '../../lib/utils'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router'
+import { cn } from '@/lib/utils'
+import { useSessao } from '@/providers/SessaoProvider'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import useSWR from 'swr'
-import { useEffect, useState } from 'react'
-import { ShieldUser, CircleUserRound } from 'lucide-react'
-import { Button } from '../ui/button'
+  podeCriarTurma,
+  podeCriarUsuario,
+  podeListarUsuarios,
+  podeVerPerfil,
+} from '@/lib/permissoes'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import UsuarioAvatar from '@/components/UsuarioAvatar'
+import type { Sessao } from '@/lib/types'
+
+const ROTULO_PAPEL: Record<Sessao['papel'], string> = {
+  ADMIN: 'Administrador',
+  PROFESSOR: 'Professor',
+  ALUNO: 'Aluno',
+}
 
 export default function MainLayout() {
-  const headerHeight = '44px' // 16 * 4 = 64px
-  const sidebarWidth = '192px' // 48 * 4 = 192px
-  const margin = '16px' // 4 * 4 = 16px outer margin
+  const headerHeight = '56px'
+  const sidebarWidth = '192px'
+  const margin = '16px'
+
   return (
     <div
       className={cn('relative m-4')}
@@ -28,25 +39,22 @@ export default function MainLayout() {
         } as React.CSSProperties
       }
     >
-      {/* Fixed Header */}
+      {/* Cabeçalho fixo */}
       <div
         className={cn(
           'fixed top-0 right-[var(--margin)] left-[var(--margin)] pt-[var(--margin)]',
-          'z-50 flex items-baseline justify-between border-b px-2',
+          'z-50 flex items-center justify-between border-b px-2',
           'h-[calc(var(--header-height)+var(--margin))]',
           'bg-background text-base',
         )}
       >
-        <div className="flex items-baseline gap-4">
-          <Link to={'/'}>
-            <h1 className="font-large text-3xl">Sala de Aula</h1>
-          </Link>
-          <h3 className="text-lg font-semibold">Turma</h3>
-        </div>
-        <UserPopover />
+        <Link to="/">
+          <h1 className="text-3xl font-medium">Sala de Aula</h1>
+        </Link>
+        <MenuDaSessao />
       </div>
 
-      {/* Fixed Sidebar */}
+      {/* Barra lateral fixa */}
       <div
         className={cn(
           'fixed top-[calc(var(--header-height)+var(--margin))]',
@@ -57,7 +65,7 @@ export default function MainLayout() {
           'bg-background text-base',
         )}
       >
-        Sidebar
+        <Navegacao />
       </div>
 
       <div
@@ -75,62 +83,100 @@ export default function MainLayout() {
   )
 }
 
-function UserPopover() {
-  const [usuarioId, setUsuarioId] = useState<string>()
-  const { data: usuarios, mutate } = useSWR('usuarios', () =>
-    listUsers(usuarioId),
-  )
-  const { setUser } = useUser()
-  useEffect(() => {
-    const user = usuarios?.find((u) => u.id === usuarioId)
-    if (!user) return
-    setUser(user)
-    sessionStorage.setItem('usuario', JSON.stringify(user))
-    mutate()
-  }, [usuarios, usuarioId])
+function Navegacao() {
+  const { sessao } = useSessao()
+  if (!sessao) return null
+
+  const itens = [
+    { rotulo: 'Turmas', para: '/', mostrar: true },
+    {
+      rotulo: 'Nova turma',
+      para: '/turmas/nova',
+      mostrar: podeCriarTurma(sessao),
+    },
+    {
+      rotulo: 'Usuários',
+      para: '/usuarios',
+      mostrar: podeListarUsuarios(sessao),
+    },
+    {
+      rotulo: podeListarUsuarios(sessao) ? 'Novo professor' : 'Novo aluno',
+      para: '/usuarios/novo',
+      mostrar: podeCriarUsuario(sessao),
+    },
+  ].filter((i) => i.mostrar)
 
   return (
-    <Select value={usuarioId} onValueChange={setUsuarioId}>
-      <SelectTrigger className="border-0">
-        <SelectValue placeholder="Selecionar usuário" />
-      </SelectTrigger>
-      <SelectContent>
-        {usuarios?.map((u) => (
-          <SelectItem key={u.id} value={u.id}>
-            {u.tipo === 1 ? (
-              <>
-                <ShieldUser />
-                <span className="text-muted-foreground text-xs">Professor</span>
-              </>
-            ) : u.tipo === 0 ? (
-              <>
-                <CircleUserRound />
-                <span className="text-muted-foreground text-xs">Aluno</span>
-              </>
-            ) : (
-              <CircleUserRound />
-            )}
-            {u.name}
-          </SelectItem>
-        ))}
-        <Link to={'/usuarios'}>
-          <Button variant="outline" size="icon" className="w-full">
-            Novo
-          </Button>
-        </Link>
-      </SelectContent>
-    </Select>
+    <nav className="flex flex-col gap-1">
+      {itens.map((item) => (
+        <NavLink
+          key={item.para}
+          to={item.para}
+          end
+          className={({ isActive }) =>
+            cn(
+              'rounded-md px-3 py-1.5 text-sm',
+              isActive
+                ? 'bg-accent text-accent-foreground font-medium'
+                : 'hover:bg-accent/50',
+            )
+          }
+        >
+          {item.rotulo}
+        </NavLink>
+      ))}
+    </nav>
   )
 }
 
-export async function listUsers(
-  uid: string | undefined,
-  turmaId?: string | undefined,
-) {
-  if (!uid) return
-  const query =
-    `?id=${uid}` + (turmaId != undefined ? `&turmaId=${turmaId}` : '')
-  const response = await fetch('http://localhost:7000/usuarios' + query)
-  const users = await response.json()
-  return users as Record<string, any>[]
+function MenuDaSessao() {
+  const { sessao, sair } = useSessao()
+  const navigate = useNavigate()
+  if (!sessao) return null
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" className="h-auto gap-2 py-1">
+          <UsuarioAvatar nome={sessao.name} className="h-8 w-8" />
+          <span className="flex flex-col items-start leading-tight">
+            <span className="text-sm font-medium">{sessao.name}</span>
+            <span className="text-muted-foreground text-xs">
+              {ROTULO_PAPEL[sessao.papel]} · #{sessao.id}
+            </span>
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-56 p-1">
+        {/* O ADMIN não tem VER_PERFIL: o link só levaria a um 403. */}
+        {podeVerPerfil(sessao, sessao.id) && (
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={() => navigate(`/usuarios/${sessao.id}`)}
+          >
+            Meu perfil
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          className="w-full justify-start"
+          onClick={() => navigate('/login')}
+        >
+          Trocar de usuário
+        </Button>
+        <Separator className="my-1" />
+        <Button
+          variant="ghost"
+          className="text-destructive w-full justify-start"
+          onClick={() => {
+            sair()
+            navigate('/login', { replace: true })
+          }}
+        >
+          Sair
+        </Button>
+      </PopoverContent>
+    </Popover>
+  )
 }
