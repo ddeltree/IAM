@@ -1,6 +1,8 @@
 package poo.iam;
 
 import java.util.*;
+
+import poo.iam.condition.Condition;
 import java.util.stream.Collectors;
 
 /**
@@ -21,8 +23,13 @@ public class PermissionHolder {
     return add(Statement.allow(permission));
   }
 
-  public boolean grant(Permission permission, PermissionCondition condition) {
+  public boolean grant(Permission permission, Condition condition) {
     return add(Statement.allow(permission, condition));
+  }
+
+  /** Ponte para condição ainda em código, durante a migração. */
+  public boolean grant(Permission permission, PermissionCondition legado) {
+    return add(Statement.allow(permission, legado));
   }
 
   /** Remove todas as concessões desta permissão, com ou sem condição. */
@@ -36,8 +43,12 @@ public class PermissionHolder {
     return add(Statement.deny(permission));
   }
 
-  public boolean deny(Permission permission, PermissionCondition condition) {
+  public boolean deny(Permission permission, Condition condition) {
     return add(Statement.deny(permission, condition));
+  }
+
+  public boolean deny(Permission permission, PermissionCondition legado) {
+    return add(Statement.deny(permission, legado));
   }
 
   /**
@@ -50,29 +61,29 @@ public class PermissionHolder {
   }
 
   /** Existe concessão aplicável a este pedido? */
-  public boolean permite(Permission permission, User user, Resource resource, Object... context) {
-    return concessaoQueAplica(permission, user, resource, context) != null;
+  public boolean permite(Permission permission, RequestContext ctx) {
+    return concessaoQueAplica(permission, ctx) != null;
   }
 
   /** Existe negação aplicável a este pedido? */
-  public boolean nega(Permission permission, User user, Resource resource, Object... context) {
-    return negacaoQueAplica(permission, user, resource, context) != null;
+  public boolean nega(Permission permission, RequestContext ctx) {
+    return negacaoQueAplica(permission, ctx) != null;
   }
 
   /** A concessão que atende o pedido, ou {@code null}. Nomeá-la é o que
    *  permite explicar a decisão depois. */
-  public Statement concessaoQueAplica(Permission permission, User user, Resource resource, Object... context) {
-    return primeira(Effect.ALLOW, permission, user, resource, context);
+  public Statement concessaoQueAplica(Permission permission, RequestContext ctx) {
+    return primeira(Effect.ALLOW, permission, ctx);
   }
 
   /** A negação que barra o pedido, ou {@code null}. */
-  public Statement negacaoQueAplica(Permission permission, User user, Resource resource, Object... context) {
-    return primeira(Effect.DENY, permission, user, resource, context);
+  public Statement negacaoQueAplica(Permission permission, RequestContext ctx) {
+    return primeira(Effect.DENY, permission, ctx);
   }
 
-  private Statement primeira(Effect efeito, Permission permission, User user, Resource resource, Object... context) {
+  private Statement primeira(Effect efeito, Permission permission, RequestContext ctx) {
     for (Statement statement : statements) {
-      if (statement.getEffect() == efeito && statement.aplica(permission, user, resource, context))
+      if (statement.getEffect() == efeito && statement.aplica(permission, ctx))
         return statement;
     }
     return null;

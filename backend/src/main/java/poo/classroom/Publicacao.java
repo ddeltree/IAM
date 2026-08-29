@@ -48,6 +48,13 @@ public abstract class Publicacao implements Resource {
    * os dois lados faria Jackson entrar em recursão infinita. O JSON expõe
    * {@code turmaId} no lugar.
    */
+  /** A turma é o recurso que contém a publicação. */
+  @Override
+  @JsonIgnore
+  public Resource getPai() {
+    return turma;
+  }
+
   @JsonIgnore
   public Turma getTurma() {
     return turma;

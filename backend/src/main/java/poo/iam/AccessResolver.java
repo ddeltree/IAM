@@ -34,11 +34,14 @@ public final class AccessResolver {
       return Decisao.negacaoPadrao(
           permission + " não se aplica a um recurso do tipo " + resource.getType().name());
 
-    var negacao = procurar(user, permission, resource, true, context);
+    // O contexto é montado uma vez e reaproveitado por todas as cláusulas.
+    var ctx = ContextResolver.padrao().resolver(user, resource, context);
+
+    var negacao = procurar(user, permission, ctx, true);
     if (negacao != null)
       return Decisao.negacaoExplicita(negacao.statement, negacao.origem);
 
-    var concessao = procurar(user, permission, resource, false, context);
+    var concessao = procurar(user, permission, ctx, false);
     if (concessao != null)
       return Decisao.permitido(concessao.statement, concessao.origem);
 
@@ -47,18 +50,17 @@ public final class AccessResolver {
   }
 
   /** Varre a política inline e depois a de cada grupo, na mesma ordem sempre. */
-  private static Achado procurar(User user, Permission permission, Resource resource,
-      boolean negacao, Object... context) {
+  private static Achado procurar(User user, Permission permission, RequestContext ctx, boolean negacao) {
     var inline = negacao
-        ? user.getPolicy().negacaoQueAplica(permission, user, resource, context)
-        : user.getPolicy().concessaoQueAplica(permission, user, resource, context);
+        ? user.getPolicy().negacaoQueAplica(permission, ctx)
+        : user.getPolicy().concessaoQueAplica(permission, ctx);
     if (inline != null)
       return new Achado(inline, INLINE);
 
     for (Group group : user.getGroups()) {
       var doGrupo = negacao
-          ? group.getPolicy().negacaoQueAplica(permission, user, resource, context)
-          : group.getPolicy().concessaoQueAplica(permission, user, resource, context);
+          ? group.getPolicy().negacaoQueAplica(permission, ctx)
+          : group.getPolicy().concessaoQueAplica(permission, ctx);
       if (doGrupo != null)
         return new Achado(doGrupo, group.getName());
     }

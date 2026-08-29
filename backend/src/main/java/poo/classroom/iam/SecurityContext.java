@@ -3,6 +3,7 @@ package poo.classroom.iam;
 import static poo.classroom.iam.ClassroomConditions.*;
 import static poo.classroom.iam.ClassroomPermission.*;
 
+import poo.iam.ContextResolver;
 import poo.iam.Group;
 import poo.iam.User;
 
@@ -27,6 +28,7 @@ public class SecurityContext {
     this.admin = new User("ADMIN");
     this.alunos = new Group("Alunos");
     this.professores = new Group("Professores");
+    registrarAtributos();
     configurarPermissoesPadrao();
   }
 
@@ -44,7 +46,18 @@ public class SecurityContext {
     alunos.clearUsers();
     professores.clearPermissions();
     professores.clearUsers();
+    registrarAtributos();
     configurarPermissoesPadrao();
+  }
+
+  /**
+   * As condições leem chaves como {@code turma:professorId}; sem os provedores
+   * registrados, todas elas silenciariam para falso e tudo viraria 403.
+   */
+  private void registrarAtributos() {
+    var resolver = ContextResolver.padrao();
+    resolver.limpar();
+    ClassroomAttributes.registrarTodos(resolver);
   }
 
   private void configurarPermissoesPadrao() {
@@ -105,8 +118,8 @@ public class SecurityContext {
     professores.grantPermission(EXCLUIR_ATIVIDADE.get(), AUTOR);
     professores.grantPermission(EXCLUIR_USUARIO.get(), PROPRIO_USUARIO);
     // já apagar, sim: é a moderação da própria turma
-    professores.grantPermission(EXCLUIR_POST.get(), PROFESSOR_RESPONSAVEL.or(AUTOR));
-    professores.grantPermission(EXCLUIR_COMENTARIO.get(), PROFESSOR_RESPONSAVEL.or(AUTOR));
+    professores.grantPermission(EXCLUIR_POST.get(), PROFESSOR_RESPONSAVEL.ou(AUTOR));
+    professores.grantPermission(EXCLUIR_COMENTARIO.get(), PROFESSOR_RESPONSAVEL.ou(AUTOR));
 
     professores.grantPermission(MATRICULAR_ALUNO.get(), PROFESSOR_RESPONSAVEL);
     professores.grantPermission(DESMATRICULAR_ALUNO.get(), PROFESSOR_RESPONSAVEL);

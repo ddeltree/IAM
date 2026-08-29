@@ -2,6 +2,7 @@ package poo.api;
 
 import poo.classroom.Turma;
 import poo.classroom.iam.ClassroomConditions;
+import poo.iam.ContextResolver;
 import poo.iam.User;
 
 public class Participante {
@@ -22,7 +23,8 @@ public class Participante {
   public static boolean isParticipante(User user, Turma turma) {
     if (user == null || turma == null)
       return false;
-    return ClassroomConditions.PARTICIPANTE.test(user, turma);
+    var ctx = ContextResolver.padrao().resolver(user, turma);
+    return ClassroomConditions.PARTICIPANTE.avaliar(ctx);
   }
 
 }

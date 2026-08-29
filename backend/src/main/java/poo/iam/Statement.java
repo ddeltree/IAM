@@ -2,6 +2,9 @@ package poo.iam;
 
 import java.util.Objects;
 
+import poo.iam.condition.CondicaoOpaca;
+import poo.iam.condition.Condition;
+
 /**
  * Uma cláusula de política: efeito + permissão + condição.
  *
@@ -13,10 +16,10 @@ import java.util.Objects;
 public class Statement {
   private final Effect effect;
   private final Permission permission;
-  private final PermissionCondition condition;
+  private final Condition condition;
   private final String sid;
 
-  private Statement(Effect effect, Permission permission, PermissionCondition condition) {
+  private Statement(Effect effect, Permission permission, Condition condition) {
     this.effect = effect;
     this.permission = permission;
     this.condition = condition;
@@ -24,24 +27,33 @@ public class Statement {
   }
 
   public static Statement allow(Permission permission) {
-    return new Statement(Effect.ALLOW, permission, PermissionCondition.SEMPRE);
+    return new Statement(Effect.ALLOW, permission, Condition.SEMPRE);
   }
 
-  public static Statement allow(Permission permission, PermissionCondition condition) {
+  public static Statement allow(Permission permission, Condition condition) {
     return new Statement(Effect.ALLOW, permission, condition);
   }
 
-  public static Statement deny(Permission permission) {
-    return new Statement(Effect.DENY, permission, PermissionCondition.SEMPRE);
+  /** Ponte para uma condição ainda escrita em código. Veja {@link CondicaoOpaca}. */
+  public static Statement allow(Permission permission, PermissionCondition legado) {
+    return new Statement(Effect.ALLOW, permission, new CondicaoOpaca(legado));
   }
 
-  public static Statement deny(Permission permission, PermissionCondition condition) {
+  public static Statement deny(Permission permission) {
+    return new Statement(Effect.DENY, permission, Condition.SEMPRE);
+  }
+
+  public static Statement deny(Permission permission, Condition condition) {
     return new Statement(Effect.DENY, permission, condition);
   }
 
+  public static Statement deny(Permission permission, PermissionCondition legado) {
+    return new Statement(Effect.DENY, permission, new CondicaoOpaca(legado));
+  }
+
   /** A cláusula fala sobre esta permissão e a condição dela passa? */
-  public boolean aplica(Permission permission, User user, Resource resource, Object... context) {
-    return this.permission.equals(permission) && condition.test(user, resource, context);
+  public boolean aplica(Permission permission, RequestContext ctx) {
+    return this.permission.equals(permission) && condition.avaliar(ctx);
   }
 
   public boolean falaSobre(Permission permission) {
@@ -65,14 +77,14 @@ public class Statement {
     return permission;
   }
 
-  public PermissionCondition getCondition() {
+  public Condition getCondition() {
     return condition;
   }
 
   /**
    * Duas cláusulas são iguais quando têm o mesmo efeito, a mesma permissão e a
-   * mesma condição. Como as condições costumam ser lambdas, a comparação delas
-   * é por identidade — o suficiente para não duplicar a mesma concessão.
+   * mesma condição. Agora que a condição é dado, a comparação dela é
+   * estrutural — duas concessões escritas igual são a mesma concessão.
    */
   @Override
   public boolean equals(Object o) {
@@ -83,17 +95,17 @@ public class Statement {
     var that = (Statement) o;
     return effect == that.effect
         && permission.equals(that.permission)
-        && condition == that.condition;
+        && condition.equals(that.condition);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(effect, permission, System.identityHashCode(condition));
+    return Objects.hash(effect, permission, condition);
   }
 
   @Override
   public String toString() {
-    var restrita = condition != PermissionCondition.SEMPRE ? " (condicional)" : "";
+    var restrita = condition != Condition.SEMPRE ? " (condicional)" : "";
     return sid + restrita;
   }
 }

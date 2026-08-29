@@ -42,6 +42,13 @@ public class Comentario implements Resource {
   }
 
   /** Ignorado na serialização pelo mesmo motivo de {@link Publicacao#getTurma()}. */
+  /** A publicação é o recurso que contém o comentário. */
+  @Override
+  @JsonIgnore
+  public Resource getPai() {
+    return publicacao;
+  }
+
   @JsonIgnore
   public Publicacao getPublicacao() {
     return publicacao;

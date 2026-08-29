@@ -14,7 +14,7 @@ import poo.classroom.Turma;
 import poo.iam.Decisao;
 import poo.iam.Group;
 import poo.iam.MembershipManager;
-import poo.iam.PermissionCondition;
+import poo.iam.condition.Condition;
 import poo.classroom.iam.SecurityContext;
 import poo.classroom.iam.ClassroomPermission;
 import poo.iam.User;
@@ -195,7 +195,8 @@ public class PermissoesTest extends ApiFixture {
   // a mesma permissão com restrições diferentes a principais diferentes.
 
   /** Só permite quando o recurso é o próprio usuário que está pedindo. */
-  private static final PermissionCondition SOBRE_SI_MESMO = (user, resource, ctx) -> user.equals(resource);
+  private static final Condition SOBRE_SI_MESMO =
+      Condition.igual("recurso:id", "${principal:id}");
 
   @Test
   void concessaoCondicionalSoValeQuandoACondicaoPassa() {

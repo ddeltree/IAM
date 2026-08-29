@@ -2,6 +2,8 @@ package poo.iam;
 
 import java.util.*;
 
+import poo.iam.condition.Condition;
+
 public class Group {
   private final String name;
   private final Set<User> users = new HashSet<>();
@@ -36,7 +38,7 @@ public class Group {
   }
 
   /** Concessão válida só quando a condição passar. */
-  public boolean grantPermission(Permission permission, PermissionCondition condition) {
+  public boolean grantPermission(Permission permission, Condition condition) {
     return registrar(policy.grant(permission, condition), "GRANTED", permission);
   }
 
@@ -49,7 +51,7 @@ public class Group {
     return registrar(policy.deny(permission), "DENIED", permission);
   }
 
-  public boolean denyPermission(Permission permission, PermissionCondition condition) {
+  public boolean denyPermission(Permission permission, Condition condition) {
     return registrar(policy.deny(permission, condition), "DENIED", permission);
   }
 

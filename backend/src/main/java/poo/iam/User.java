@@ -2,6 +2,8 @@ package poo.iam;
 
 import java.util.*;
 
+import poo.iam.condition.Condition;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class User implements Resource {
@@ -26,7 +28,7 @@ public class User implements Resource {
   }
 
   /** Concessão válida só quando a condição passar. */
-  public boolean grantPermission(Permission permission, PermissionCondition condition) {
+  public boolean grantPermission(Permission permission, Condition condition) {
     return registrar(policy.grant(permission, condition), "granted", permission);
   }
 
@@ -42,7 +44,7 @@ public class User implements Resource {
     return registrar(policy.deny(permission), "DENIED", permission);
   }
 
-  public boolean denyPermission(Permission permission, PermissionCondition condition) {
+  public boolean denyPermission(Permission permission, Condition condition) {
     return registrar(policy.deny(permission, condition), "DENIED", permission);
   }
 
