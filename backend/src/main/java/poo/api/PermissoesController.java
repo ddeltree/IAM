@@ -9,8 +9,12 @@ import io.javalin.http.Context;
 import poo.classroom.iam.ClassroomResource;
 import poo.classroom.iam.PermissoesEfetivas;
 import poo.classroom.iam.SecurityContext;
+import poo.classroom.iam.ClassroomPermission;
 import poo.iam.Decisao;
+import poo.iam.Group;
 import poo.iam.PolicyJson;
+import poo.iam.PrincipalDirectory;
+import poo.iam.query.PolicyQuery;
 import poo.iam.PrincipalResource;
 import poo.iam.Resource;
 import poo.iam.User;
@@ -28,7 +32,55 @@ public class PermissoesController {
   public static void register(Javalin app) {
     app.get("/permissoes", PermissoesController::consultar);
     app.get("/iam/politicas", PermissoesController::politicas);
+    app.get("/permissoes/quem-pode", PermissoesController::quemPode);
   }
+
+  /**
+   * A pergunta ao contrário: quem alcança esta ação neste recurso.
+   *
+   * Só o ADMIN — a resposta descreve a política, não o uso.
+   */
+  private static void quemPode(Context ctx) {
+    Utils.hasPermissionOrThrow(ctx, ClassroomPermission.LISTAR_USUARIOS);
+
+    var acao = ctx.queryParam("acao");
+    var recurso = resolver(ctx.queryParam("recurso"));
+    if (acao == null || recurso == null)
+      throw new poo.api.exceptions.NotFoundException("Informe acao e recurso (TIPO/id)");
+
+    var permissao = ClassroomPermission.valueOf(acao).get();
+    var consulta = new PolicyQuery(DIRETORIO);
+    var resultado = consulta.quemPode(permissao, recurso);
+
+    var principais = resultado.principais.stream()
+        .map(u -> Map.of("id", u.getId(), "name", u.getName()))
+        .toList();
+
+    ctx.json(Map.of(
+        "acao", acao,
+        "recurso", ctx.queryParam("recurso"),
+        "principais", principais,
+        // deixa visível quanto trabalho a poda evitou
+        "avaliados", resultado.avaliados,
+        "conhecidos", resultado.conhecidos,
+        "podou", resultado.podou));
+  }
+
+  /** O núcleo não guarda principais; quem os guarda é a aplicação. */
+  private static final PrincipalDirectory DIRETORIO = new PrincipalDirectory() {
+    @Override
+    public java.util.Collection<User> usuarios() {
+      var todos = new java.util.ArrayList<>(UserController.todos());
+      todos.add(SecurityContext.getInstance().getAdmin());
+      return todos;
+    }
+
+    @Override
+    public java.util.Collection<Group> grupos() {
+      var auth = SecurityContext.getInstance();
+      return List.of(auth.getProfessores(), auth.getAlunos());
+    }
+  };
 
   /**
    * A política de cada principal, como documento — o análogo do

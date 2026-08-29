@@ -2,6 +2,8 @@ package poo.iam;
 
 import java.util.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import poo.iam.condition.Condition;
 
 public class Group {
@@ -19,6 +21,15 @@ public class Group {
 
   protected void removeUser(User user) {
     users.remove(user);
+  }
+
+  /**
+   * Os membros. Fica fora do JSON: serializar os dois lados faria Jackson
+   * entrar em recursão (usuário -> grupo -> usuário).
+   */
+  @JsonIgnore
+  public Set<User> getUsers() {
+    return Collections.unmodifiableSet(users);
   }
 
   /** Remove todos os membros. */

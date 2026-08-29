@@ -18,6 +18,11 @@ public class UserController {
     return usuarios.get(id);
   }
 
+  /** Todos os usuários cadastrados. Usado pelas consultas reversas do IAM. */
+  public static java.util.Collection<User> todos() {
+    return usuarios.values();
+  }
+
   public static void register(Javalin app) {
     app.get("/usuarios", UserController::listarUsuarios);
     app.get("/usuarios/{id}", UserController::verPerfil);
