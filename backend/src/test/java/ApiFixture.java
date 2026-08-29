@@ -11,6 +11,7 @@ import io.javalin.testtools.TestCase;
 import io.javalin.testtools.TestConfig;
 import okhttp3.Response;
 import poo.Main;
+import poo.classroom.iam.SecurityContext;
 
 /**
  * Base dos testes de API: sobe a aplicação já limpa e concentra os helpers
@@ -20,6 +21,15 @@ import poo.Main;
  * está fazendo a chamada.
  */
 public abstract class ApiFixture {
+
+  static {
+    // O ADMIN é um User como qualquer outro e pega o id do contador global, ou
+    // seja: ele só é o 1 se for o primeiro a ser construído. Tocar no
+    // SecurityContext aqui garante isso antes de qualquer teste rodar — sem
+    // esta linha, rodar uma classe de teste isolada (que cria usuários soltos
+    // antes de subir a aplicação) desalinha todos os ids abaixo.
+    SecurityContext.getInstance();
+  }
 
   public static final int ADM_ID = 1;
   public static final int PROF1_ID = 2;
