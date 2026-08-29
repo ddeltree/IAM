@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test;
 
 import poo.api.UserController;
 import poo.api.exceptions.ForbiddenException;
+import poo.classroom.Post;
+import poo.classroom.Turma;
 import poo.iam.Decisao;
 import poo.iam.Group;
 import poo.iam.MembershipManager;
@@ -117,6 +119,22 @@ public class PermissoesTest extends ApiFixture {
   }
 
 
+
+
+  @Test
+  void permissaoNaoAlcancaRecursoDeOutroTipo() {
+    var admin = SecurityContext.getInstance().getAdmin();
+    var prof = new User("prof");
+    var turma = new Turma("POO", prof);
+
+    // O admin recebe EDITAR_POST sem condição nenhuma. Sem conferir o tipo do
+    // recurso, a concessão "vazaria" para qualquer objeto — inclusive uma turma.
+    assertFalse(ClassroomPermission.EDITAR_POST.isAllowed(admin, turma));
+
+    // e sobre um post de verdade ela continua valendo
+    var post = new Post("titulo", "corpo", prof, turma);
+    assertTrue(ClassroomPermission.EDITAR_POST.isAllowed(admin, post));
+  }
 
   // --- decisão explicada ------------------------------------------------
   //
