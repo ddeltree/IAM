@@ -6,11 +6,7 @@ import {
   excluirComentario,
   listarComentarios,
 } from '@/lib/api'
-import {
-  podeCriarComentario,
-  podeEditarComentario,
-  podeExcluirComentario,
-} from '@/lib/permissoes'
+import { usePermissoes, type Pode } from '@/hooks/usePermissoes'
 import { useSessao } from '@/providers/SessaoProvider'
 import type { Comentario, TipoPublicacao, Turma } from '@/lib/types'
 import ErroApi from './ErroApi'
@@ -41,6 +37,12 @@ export default function Comentarios({
     () => listarComentarios(turma.id, tipo, pubId),
   )
 
+  // a turma responde por criar; cada comentário, por editar e excluir
+  const { pode } = usePermissoes([
+    `TURMA/${turma.id}` as const,
+    ...(data ?? []).map((c) => `COMENTARIO/${c.id}` as const),
+  ])
+
   if (!sessao) return null
   if (error != null) return <ErroApi erro={error} className="mt-4" />
 
@@ -61,6 +63,7 @@ export default function Comentarios({
               turma={turma}
               tipo={tipo}
               pubId={pubId}
+              pode={pode}
               onMudou={() => mutate()}
             />
           ))}
@@ -69,7 +72,7 @@ export default function Comentarios({
 
       {erroAcao != null && <ErroApi erro={erroAcao} />}
 
-      {podeCriarComentario(sessao, turma) && (
+      {pode('CRIAR_COMENTARIO', `TURMA/${turma.id}`) && (
         <div className="flex w-full items-start gap-2">
           <UsuarioAvatar nome={sessao.name} />
           <div className="w-full space-y-1">
@@ -108,12 +111,14 @@ function ItemComentario({
   turma,
   tipo,
   pubId,
+  pode,
   onMudou,
 }: {
   comentario: Comentario
   turma: Turma
   tipo: TipoPublicacao
   pubId: string
+  pode: Pode
   onMudou: () => void
 }) {
   const { sessao } = useSessao()
@@ -170,12 +175,12 @@ function ItemComentario({
       {!editando && (
         <div className="ml-auto flex shrink-0 gap-1">
           {/* Editar é do autor; excluir também vale para a moderação da turma. */}
-          {podeEditarComentario(sessao, comentario) && (
+          {pode('EDITAR_COMENTARIO', `COMENTARIO/${comentario.id}`) && (
             <Button size="sm" variant="ghost" onClick={() => setEditando(true)}>
               Editar
             </Button>
           )}
-          {podeExcluirComentario(sessao, comentario, turma) && (
+          {pode('EXCLUIR_COMENTARIO', `COMENTARIO/${comentario.id}`) && (
             <Button
               size="sm"
               variant="ghost"

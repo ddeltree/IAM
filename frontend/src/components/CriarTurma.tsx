@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useSWRConfig } from 'swr'
 import { criarTurma } from '@/lib/api'
-import { podeCriarTurma } from '@/lib/permissoes'
+import { usePermissoes } from '@/hooks/usePermissoes'
 import { useSessao } from '@/providers/SessaoProvider'
 import TituloFrame from './TituloFrame'
 import ErroApi, { SemPermissao } from './ErroApi'
@@ -15,11 +15,12 @@ export default function CriarTurma() {
   const [erro, setErro] = useState<unknown>(null)
   const [salvando, setSalvando] = useState(false)
   const { sessao } = useSessao()
+  const { pode, carregando } = usePermissoes()
   const { mutate } = useSWRConfig()
   const navigate = useNavigate()
 
-  if (!sessao) return null
-  if (!podeCriarTurma(sessao))
+  if (!sessao || carregando) return null
+  if (!pode('CRIAR_TURMA'))
     return (
       <TituloFrame titulo="Nova turma">
         <SemPermissao>

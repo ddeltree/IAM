@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { atualizarPost, excluirPost } from '@/lib/api'
-import { podeEditarPost, podeExcluirPost } from '@/lib/permissoes'
+import type { Pode } from '@/hooks/usePermissoes'
 import { useSessao } from '@/providers/SessaoProvider'
 import type { Post, Turma } from '@/lib/types'
 import Comentarios from './Comentarios'
@@ -30,10 +30,13 @@ import { MessageSquare } from 'lucide-react'
 export default function PostCard({
   post,
   turma,
+  pode,
   onMudou,
 }: {
   post: Post
   turma: Turma
+  /** Vem do Mural, que consulta as permissões de todos os posts de uma vez. */
+  pode: Pode
   onMudou: () => void
 }) {
   const { sessao } = useSessao()
@@ -59,7 +62,7 @@ export default function PostCard({
 
         {!editando && (
           <div className="flex shrink-0 gap-1">
-            {podeEditarPost(sessao, post) && (
+            {pode('EDITAR_POST', `POST/${post.id}`) && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -72,7 +75,7 @@ export default function PostCard({
                 Editar
               </Button>
             )}
-            {podeExcluirPost(sessao, post, turma) && (
+            {pode('EXCLUIR_POST', `POST/${post.id}`) && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button

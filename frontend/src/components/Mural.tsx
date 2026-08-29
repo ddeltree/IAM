@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import useSWR from 'swr'
 import { format, parseISO } from 'date-fns'
 import { criarPost, listarAtividades, listarPosts } from '@/lib/api'
-import { podeCriarPost } from '@/lib/permissoes'
+import { usePermissoes } from '@/hooks/usePermissoes'
 import { useSessao } from '@/providers/SessaoProvider'
 import { useTurma } from './layout/TurmaLayout'
 import PostCard from './PostCard'
@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 export default function Mural() {
   const { turma, recarregarTurma } = useTurma()
   const { sessao } = useSessao()
+
   const [titulo, setTitulo] = useState('')
   const [corpo, setCorpo] = useState('')
   const [erro, setErro] = useState<unknown>(null)
@@ -30,6 +31,12 @@ export default function Mural() {
   } = useSWR(sessao ? [sessao.id, 'posts', turma.id] : null, () =>
     listarPosts(turma.id),
   )
+
+  // uma consulta só para a turma e todos os posts, em vez de uma por card
+  const { pode } = usePermissoes([
+    `TURMA/${turma.id}` as const,
+    ...(posts ?? []).map((p) => `POST/${p.id}` as const),
+  ])
 
   if (!sessao) return null
 
@@ -57,7 +64,7 @@ export default function Mural() {
         <ProximasAtividades />
 
         <div className="flex w-full flex-col gap-4">
-          {podeCriarPost(sessao, turma) && (
+          {pode('CRIAR_POST', `TURMA/${turma.id}`) && (
             <div className="w-full rounded-lg border p-4 shadow-md">
               <div className="flex w-full items-start gap-2">
                 <UsuarioAvatar nome={sessao.name} className="h-12 w-12" />
@@ -117,6 +124,7 @@ export default function Mural() {
               key={post.id}
               post={post}
               turma={turma}
+              pode={pode}
               onMudou={recarregar}
             />
           ))}

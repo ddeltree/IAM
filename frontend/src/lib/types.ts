@@ -3,7 +3,23 @@
  * das classes em `poo.classroom` e dos DTOs em `poo.api`.
  */
 
-export type Papel = 'ADMIN' | 'PROFESSOR' | 'ALUNO'
+export type Papel = 'ADMIN' | 'PROFESSOR' | 'ALUNO' | 'DESCONHECIDO'
+
+/**
+ * Referência a um recurso no formato `TIPO/id`, como o backend espera em
+ * `GET /permissoes?recurso=`.
+ */
+export type RefRecurso =
+  `${'TURMA' | 'POST' | 'ATIVIDADE' | 'COMENTARIO' | 'USUARIO'}/${string}`
+
+/** Mapa ação -> pode, como o backend devolve. */
+export type MapaPermissoes = Record<string, boolean>
+
+export interface RespostaPermissoes {
+  principal: { id: string; name: string; papel: Papel }
+  global: MapaPermissoes
+  recursos: Record<string, MapaPermissoes>
+}
 
 /** Segmento literal da rota de comentários: /turmas/{id}/{posts|atividades}/... */
 export type TipoPublicacao = 'posts' | 'atividades'

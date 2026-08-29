@@ -8,7 +8,7 @@ import {
   matricular,
 } from '@/lib/api'
 import { lembrar, listarConhecidos } from '@/lib/conhecidos'
-import { podeMatricular } from '@/lib/permissoes'
+import { usePermissoes } from '@/hooks/usePermissoes'
 import { useSessao } from '@/providers/SessaoProvider'
 import { useTurma } from './layout/TurmaLayout'
 import ErroApi from './ErroApi'
@@ -40,6 +40,7 @@ import {
 export default function Pessoas() {
   const { turma, recarregarTurma } = useTurma()
   const { sessao } = useSessao()
+  const { pode } = usePermissoes([`TURMA/${turma.id}`])
 
   const { data, error, isLoading, mutate } = useSWR(
     sessao ? [sessao.id, 'participantes', turma.id] : null,
@@ -105,7 +106,7 @@ export default function Pessoas() {
                     id #{aluno.userId}
                   </span>
                 </div>
-                {podeMatricular(sessao, turma) && (
+                {pode('DESMATRICULAR_ALUNO', `TURMA/${turma.id}`) && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
@@ -146,7 +147,7 @@ export default function Pessoas() {
         )}
       </section>
 
-      {podeMatricular(sessao, turma) && (
+      {pode('MATRICULAR_ALUNO', `TURMA/${turma.id}`) && (
         <Matricula
           turmaId={turma.id}
           jaMatriculados={alunos.map((a) => a.userId)}

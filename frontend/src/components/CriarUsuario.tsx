@@ -3,11 +3,7 @@ import { Link, useSearchParams } from 'react-router'
 import { useSWRConfig } from 'swr'
 import { criarUsuario, matricular } from '@/lib/api'
 import { lembrar } from '@/lib/conhecidos'
-import {
-  podeCriarAluno,
-  podeCriarProfessor,
-  podeCriarUsuario,
-} from '@/lib/permissoes'
+import { usePermissoes } from '@/hooks/usePermissoes'
 import { useSessao } from '@/providers/SessaoProvider'
 import type { UsuarioDTO } from '@/lib/types'
 import TituloFrame from './TituloFrame'
@@ -20,6 +16,7 @@ import { Separator } from '@/components/ui/separator'
 
 export default function CriarUsuario() {
   const { sessao } = useSessao()
+  const { pode, carregando } = usePermissoes()
   const { mutate } = useSWRConfig()
   const [parametros] = useSearchParams()
   const turmaId = parametros.get('turmaId')
@@ -30,9 +27,12 @@ export default function CriarUsuario() {
   const [erro, setErro] = useState<unknown>(null)
   const [salvando, setSalvando] = useState(false)
 
-  if (!sessao) return null
+  if (!sessao || carregando) return null
 
-  if (!podeCriarUsuario(sessao))
+  const podeProfessor = pode('CRIAR_PROFESSOR')
+  const podeAluno = pode('CRIAR_ALUNO')
+
+  if (!podeProfessor && !podeAluno)
     return (
       <TituloFrame titulo="Novo usuário">
         <SemPermissao>
@@ -44,8 +44,6 @@ export default function CriarUsuario() {
 
   // Cada papel só cria um tipo: CRIAR_PROFESSOR é exclusivo do admin e
   // CRIAR_ALUNO, dos professores. Mostrar as duas opções só geraria 403.
-  const podeProfessor = podeCriarProfessor(sessao)
-  const podeAluno = podeCriarAluno(sessao)
   const tipoFixo: '0' | '1' | null = podeProfessor
     ? '1'
     : podeAluno

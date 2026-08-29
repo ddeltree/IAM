@@ -1,12 +1,7 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 import { cn } from '@/lib/utils'
 import { useSessao } from '@/providers/SessaoProvider'
-import {
-  podeCriarTurma,
-  podeCriarUsuario,
-  podeListarUsuarios,
-  podeVerPerfil,
-} from '@/lib/permissoes'
+import { usePermissoes } from '@/hooks/usePermissoes'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -21,6 +16,7 @@ const ROTULO_PAPEL: Record<Sessao['papel'], string> = {
   ADMIN: 'Administrador',
   PROFESSOR: 'Professor',
   ALUNO: 'Aluno',
+  DESCONHECIDO: 'Sem grupo',
 }
 
 export default function MainLayout() {
@@ -85,24 +81,26 @@ export default function MainLayout() {
 
 function Navegacao() {
   const { sessao } = useSessao()
+  const { pode } = usePermissoes()
   if (!sessao) return null
 
+  const criaProfessor = pode('CRIAR_PROFESSOR')
   const itens = [
     { rotulo: 'Turmas', para: '/', mostrar: true },
     {
       rotulo: 'Nova turma',
       para: '/turmas/nova',
-      mostrar: podeCriarTurma(sessao),
+      mostrar: pode('CRIAR_TURMA'),
     },
     {
       rotulo: 'Usuários',
       para: '/usuarios',
-      mostrar: podeListarUsuarios(sessao),
+      mostrar: pode('LISTAR_USUARIOS'),
     },
     {
-      rotulo: podeListarUsuarios(sessao) ? 'Novo professor' : 'Novo aluno',
+      rotulo: criaProfessor ? 'Novo professor' : 'Novo aluno',
       para: '/usuarios/novo',
-      mostrar: podeCriarUsuario(sessao),
+      mostrar: criaProfessor || pode('CRIAR_ALUNO'),
     },
   ].filter((i) => i.mostrar)
 
@@ -132,6 +130,7 @@ function Navegacao() {
 function MenuDaSessao() {
   const { sessao, sair } = useSessao()
   const navigate = useNavigate()
+  const { pode } = usePermissoes(sessao ? [`USUARIO/${sessao.id}`] : [])
   if (!sessao) return null
 
   return (
@@ -149,7 +148,7 @@ function MenuDaSessao() {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-56 p-1">
         {/* O ADMIN não tem VER_PERFIL: o link só levaria a um 403. */}
-        {podeVerPerfil(sessao, sessao.id) && (
+        {pode('VER_PERFIL', `USUARIO/${sessao.id}`) && (
           <Button
             variant="ghost"
             className="w-full justify-start"

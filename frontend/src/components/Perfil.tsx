@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router'
 import useSWR from 'swr'
 import { excluirUsuario, renomearUsuario, verUsuario } from '@/lib/api'
 import { esquecer, lembrar, papelDoTipo } from '@/lib/conhecidos'
-import { podeEditarUsuario, podeVerPerfil } from '@/lib/permissoes'
+import { usePermissoes } from '@/hooks/usePermissoes'
 import { useSessao } from '@/providers/SessaoProvider'
 import TituloFrame from './TituloFrame'
 import ErroApi, { SemPermissao } from './ErroApi'
@@ -32,9 +32,12 @@ export default function Perfil() {
   const [editando, setEditando] = useState(false)
   const [erroAcao, setErroAcao] = useState<unknown>(null)
 
+  const { pode } = usePermissoes(
+    usuarioId ? [`USUARIO/${usuarioId}` as const] : [],
+  )
   // O backend só deixa cada um ver o próprio perfil, e o ADMIN nem isso —
   // então nem chegamos a pedir quando já se sabe que a resposta é 403.
-  const permitido = !!sessao && !!usuarioId && podeVerPerfil(sessao, usuarioId)
+  const permitido = !!usuarioId && pode('VER_PERFIL', `USUARIO/${usuarioId}`)
 
   const { data, error, isLoading, mutate } = useSWR(
     permitido ? [sessao!.id, 'usuario', usuarioId] : null,
@@ -124,7 +127,7 @@ export default function Perfil() {
         <Separator />
 
         <div className="flex gap-2">
-          {podeEditarUsuario(sessao, data.id) && !editando && (
+          {pode('EDITAR_USUARIO', `USUARIO/${data.id}`) && !editando && (
             <Button
               variant="outline"
               onClick={() => {

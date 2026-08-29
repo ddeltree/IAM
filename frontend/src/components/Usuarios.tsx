@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 import useSWR from 'swr'
 import { excluirUsuario, listarUsuarios } from '@/lib/api'
 import { esquecer, lembrar, papelDoTipo } from '@/lib/conhecidos'
-import { podeCriarUsuario, podeListarUsuarios } from '@/lib/permissoes'
+import { usePermissoes } from '@/hooks/usePermissoes'
 import { useSessao } from '@/providers/SessaoProvider'
 import TituloFrame from './TituloFrame'
 import ErroApi, { SemPermissao } from './ErroApi'
@@ -25,7 +25,8 @@ import { useEffect } from 'react'
 
 export default function Usuarios() {
   const { sessao } = useSessao()
-  const podeListar = !!sessao && podeListarUsuarios(sessao)
+  const { pode, carregando } = usePermissoes()
+  const podeListar = pode('LISTAR_USUARIOS')
 
   const { data, error, isLoading, mutate } = useSWR(
     podeListar ? [sessao!.id, 'usuarios'] : null,
@@ -40,7 +41,7 @@ export default function Usuarios() {
     )
   }, [data])
 
-  if (!sessao) return null
+  if (!sessao || carregando) return null
 
   if (!podeListar)
     return (
@@ -48,7 +49,7 @@ export default function Usuarios() {
         <SemPermissao>
           Só o administrador pode listar os usuários do sistema.
         </SemPermissao>
-        {podeCriarUsuario(sessao) && (
+        {pode('CRIAR_ALUNO') && (
           <Link to="/usuarios/novo" className="mt-4 inline-block">
             <Button>Novo aluno</Button>
           </Link>

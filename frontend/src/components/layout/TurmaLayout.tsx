@@ -9,7 +9,7 @@ import useSWR from 'swr'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { excluirTurma, renomearTurma, verTurma } from '@/lib/api'
-import { podeEditarTurma, podeExcluirTurma } from '@/lib/permissoes'
+import { usePermissoes } from '@/hooks/usePermissoes'
 import { useSessao } from '@/providers/SessaoProvider'
 import type { Turma } from '@/lib/types'
 import ErroApi from '@/components/ErroApi'
@@ -45,6 +45,7 @@ const abas = [
 export default function TurmaLayout() {
   const { turmaId } = useParams()
   const { sessao } = useSessao()
+  const { pode } = usePermissoes(turmaId ? [`TURMA/${turmaId}`] : [])
   const navigate = useNavigate()
   const [renomeando, setRenomeando] = useState(false)
   const [novoNome, setNovoNome] = useState('')
@@ -96,7 +97,7 @@ export default function TurmaLayout() {
 
         {turma && sessao && (
           <div className="ml-auto flex items-center gap-2">
-            {podeEditarTurma(sessao, turma) &&
+            {pode('EDITAR_TURMA', `TURMA/${turma.id}`) &&
               (renomeando ? (
                 <>
                   <Input
@@ -136,7 +137,7 @@ export default function TurmaLayout() {
                 </Button>
               ))}
 
-            {podeExcluirTurma(sessao, turma) && !renomeando && (
+            {pode('EXCLUIR_TURMA', `TURMA/${turma.id}`) && !renomeando && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button size="sm" variant="destructive">

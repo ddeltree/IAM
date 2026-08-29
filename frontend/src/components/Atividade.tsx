@@ -2,7 +2,7 @@ import { useNavigate, useParams } from 'react-router'
 import useSWR, { useSWRConfig } from 'swr'
 import { ClipboardList } from 'lucide-react'
 import { atualizarAtividade, excluirAtividade, verAtividade } from '@/lib/api'
-import { podeEditarAtividade, podeExcluirAtividade } from '@/lib/permissoes'
+import { usePermissoes } from '@/hooks/usePermissoes'
 import { useSessao } from '@/providers/SessaoProvider'
 import { useTurma } from './layout/TurmaLayout'
 import { AlertaExclusao, AtividadeDialog } from './AtividadeDialog'
@@ -18,6 +18,9 @@ export default function Atividade() {
   const { sessao } = useSessao()
   const { mutate: mutateGlobal } = useSWRConfig()
   const navigate = useNavigate()
+  const { pode } = usePermissoes(
+    atividadeId ? [`ATIVIDADE/${atividadeId}` as const] : [],
+  )
 
   const {
     data: atividade,
@@ -54,7 +57,7 @@ export default function Atividade() {
         <div className="text-secondary-foreground mt-3 flex items-baseline justify-between text-xs">
           <p>Entrega: {formatarEntrega(atividade.dataEntrega)}</p>
           <div className="flex gap-2">
-            {podeEditarAtividade(sessao, turma) && (
+            {pode('EDITAR_ATIVIDADE', `ATIVIDADE/${atividade.id}`) && (
               <AtividadeDialog
                 rotulo="Editar"
                 titulo="Editar atividade"
@@ -71,7 +74,7 @@ export default function Atividade() {
                 }}
               />
             )}
-            {podeExcluirAtividade(sessao, turma) && (
+            {pode('EXCLUIR_ATIVIDADE', `ATIVIDADE/${atividade.id}`) && (
               <AlertaExclusao
                 onExcluir={async () => {
                   await excluirAtividade(atividade.id)

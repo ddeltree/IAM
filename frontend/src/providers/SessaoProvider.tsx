@@ -7,8 +7,8 @@ import {
   type ReactNode,
 } from 'react'
 import { useSWRConfig } from 'swr'
-import { ApiError, listarUsuarios, verUsuario } from '@/lib/api'
-import { lembrar, papelDoTipo } from '@/lib/conhecidos'
+import { consultarPermissoes } from '@/lib/api'
+import { lembrar } from '@/lib/conhecidos'
 import type { Sessao } from '@/lib/types'
 
 const CHAVE = 'sala:sessao'
@@ -43,27 +43,17 @@ function lerSessaoGuardada(): Sessao | null {
 }
 
 /**
- * Descobre quem é o dono de um id usando o próprio sistema de permissões —
- * o backend não tem rota de login nem de "quem sou eu".
+ * Descobre quem é o dono de um id.
  *
- * GET /usuarios/{id} resolve os três casos numa requisição só:
- *  - 200 → é um aluno ou professor (a condição de VER_PERFIL é "ser o dono",
- *    e o dono aqui é sempre o próprio solicitante);
- *  - 403 → é o ADMIN, o único papel que não recebe VER_PERFIL;
- *  - 404 → o id não existe.
+ * O backend não tem rota de login, mas `GET /permissoes` devolve o principal
+ * autenticado junto com o que ele pode fazer — e responde 404 se o cookie
+ * apontar para um id que não existe. Antes isto era deduzido de um 403 em
+ * `/usuarios/{id}`, o que funcionava por efeito colateral das permissões;
+ * agora é uma pergunta direta.
  */
-export async function identificarSessao(id: string): Promise<Sessao> {
-  try {
-    const dto = await verUsuario(id)
-    return { id: dto.id, name: dto.name, papel: papelDoTipo(dto.tipo) }
-  } catch (erro) {
-    if (erro instanceof ApiError && erro.status === 403) {
-      // Confirma que é mesmo o ADMIN: LISTAR_USUARIOS é exclusivo dele.
-      await listarUsuarios()
-      return { id, name: 'ADMIN', papel: 'ADMIN' }
-    }
-    throw erro
-  }
+export async function identificarSessao(): Promise<Sessao> {
+  const { principal } = await consultarPermissoes()
+  return { id: principal.id, name: principal.name, papel: principal.papel }
 }
 
 export function SessaoProvider({ children }: { children: ReactNode }) {
@@ -95,7 +85,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     async (id: string) => {
       gravarCookie(id)
       try {
-        const nova = await identificarSessao(id)
+        const nova = await identificarSessao()
         sessionStorage.setItem(CHAVE, JSON.stringify(nova))
         lembrar(nova)
         await limparCache()

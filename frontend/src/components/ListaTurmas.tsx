@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import useSWR from 'swr'
 import { listarTurmas } from '@/lib/api'
-import { podeCriarTurma } from '@/lib/permissoes'
+import { usePermissoes } from '@/hooks/usePermissoes'
 import { useSessao } from '@/providers/SessaoProvider'
 import type { Turma } from '@/lib/types'
 import TurmaSkeletonCard from './TurmaSkeletonCard'
@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator'
 
 export default function ListaTurmas() {
   const { sessao } = useSessao()
+  const { pode } = usePermissoes()
   const { data, error, isLoading } = useSWR(
     sessao ? [sessao.id, 'turmas'] : null,
     listarTurmas,
@@ -30,6 +31,7 @@ export default function ListaTurmas() {
     ADMIN: 'Nenhuma turma foi criada ainda.',
     PROFESSOR: 'Você ainda não criou nenhuma turma.',
     ALUNO: 'Você ainda não foi matriculado em nenhuma turma.',
+    DESCONHECIDO: 'Você não participa de nenhuma turma.',
   }[sessao.papel]
 
   return (
@@ -41,7 +43,7 @@ export default function ListaTurmas() {
           {data?.map((turma) => <TurmaCard key={turma.id} turma={turma} />)}
         </ul>
       )}
-      {podeCriarTurma(sessao) && (
+      {pode('CRIAR_TURMA') && (
         <>
           <Separator className="my-4" />
           <Link to="/turmas/nova">

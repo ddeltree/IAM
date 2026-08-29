@@ -8,11 +8,7 @@ import {
   excluirAtividade,
   listarAtividades,
 } from '@/lib/api'
-import {
-  podeCriarAtividade,
-  podeEditarAtividade,
-  podeExcluirAtividade,
-} from '@/lib/permissoes'
+import { usePermissoes } from '@/hooks/usePermissoes'
 import { useSessao } from '@/providers/SessaoProvider'
 import { useTurma } from './layout/TurmaLayout'
 import { AlertaExclusao, AtividadeDialog } from './AtividadeDialog'
@@ -44,6 +40,11 @@ export default function Atividades() {
     sessao ? [sessao.id, 'atividades', turma.id] : null,
     () => listarAtividades(turma.id),
   )
+
+  const { pode } = usePermissoes([
+    `TURMA/${turma.id}` as const,
+    ...(data ?? []).map((a) => `ATIVIDADE/${a.id}` as const),
+  ])
 
   if (!sessao) return null
   if (error != null) return <ErroApi erro={error} />
@@ -84,7 +85,7 @@ export default function Atividades() {
               <div className="text-secondary-foreground flex items-baseline justify-between text-xs">
                 <p>Entrega: {formatarEntrega(atividade.dataEntrega)}</p>
                 <div className="flex gap-2">
-                  {podeEditarAtividade(sessao, turma) && (
+                  {pode('EDITAR_ATIVIDADE', `ATIVIDADE/${atividade.id}`) && (
                     <AtividadeDialog
                       rotulo="Editar"
                       titulo="Editar atividade"
@@ -101,7 +102,7 @@ export default function Atividades() {
                       }}
                     />
                   )}
-                  {podeExcluirAtividade(sessao, turma) && (
+                  {pode('EXCLUIR_ATIVIDADE', `ATIVIDADE/${atividade.id}`) && (
                     <AlertaExclusao
                       onExcluir={async () => {
                         await excluirAtividade(atividade.id)
@@ -115,7 +116,7 @@ export default function Atividades() {
           </Collapsible>
         ))}
 
-        {podeCriarAtividade(sessao, turma) && (
+        {pode('CRIAR_ATIVIDADE', `TURMA/${turma.id}`) && (
           <div className="mt-4 flex justify-end">
             <AtividadeDialog
               rotulo="Criar atividade"

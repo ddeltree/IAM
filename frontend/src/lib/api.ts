@@ -1,5 +1,7 @@
 import type {
   Atividade,
+  RefRecurso,
+  RespostaPermissoes,
   Comentario,
   Participante,
   Post,
@@ -44,6 +46,23 @@ async function requisicao<T>(caminho: string, opcoes?: Opcoes): Promise<T> {
   }
   return (texto ? JSON.parse(texto) : undefined) as T
 }
+
+// --- permissões -----------------------------------------------------------
+
+/**
+ * Pergunta ao backend o que o usuário pode fazer — as ações sem alvo e, para
+ * cada referência passada, as ações sobre aquele recurso.
+ *
+ * É o que substitui a antiga cópia das regras de autorização no cliente: agora
+ * existe uma fonte de verdade só, e ela é o motor de permissões do servidor.
+ */
+export const consultarPermissoes = (refs: readonly RefRecurso[] = []) =>
+  requisicao<RespostaPermissoes>(
+    '/permissoes' +
+      (refs.length
+        ? '?' + refs.map((r) => `recurso=${encodeURIComponent(r)}`).join('&')
+        : ''),
+  )
 
 // --- turmas ---------------------------------------------------------------
 
