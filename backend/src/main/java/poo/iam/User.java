@@ -4,15 +4,12 @@ import java.util.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import poo.iam.resources.Resource;
-import poo.iam.resources.ResourceTypes;
-
 public class User implements Resource {
   private static long proximoId = 1; // contador global
   protected final String id = String.valueOf(proximoId++);
   private String name;
   private final Set<Group> groups = new HashSet<>();
-  private final PermissionHolder permissionHolder = new PermissionHolder(); // composition
+  private final PermissionHolder policy = new PermissionHolder(); // composition
 
   public User() {
   }
@@ -23,18 +20,18 @@ public class User implements Resource {
 
   // PERMISSIONS
 
+  /** Concessão irrestrita. */
   public boolean grantPermission(Permission permission) {
-    var res = permissionHolder.grant(permission);
-    if (res)
-      System.out.println("[" + id + "] " + "User permission granted: " + permission);
-    return res;
+    return registrar(policy.grant(permission), "granted", permission);
+  }
+
+  /** Concessão válida só quando a condição passar. */
+  public boolean grantPermission(Permission permission, PermissionCondition condition) {
+    return registrar(policy.grant(permission, condition), "granted", permission);
   }
 
   public boolean revokePermission(Permission permission) {
-    var res = permissionHolder.revoke(permission);
-    if (res)
-      System.out.println("[" + id + "] " + "User permission revoked: " + permission);
-    return res;
+    return registrar(policy.revoke(permission), "revoked", permission);
   }
 
   /**
@@ -42,10 +39,11 @@ public class User implements Resource {
    * concedem.
    */
   public boolean denyPermission(Permission permission) {
-    var res = permissionHolder.deny(permission);
-    if (res)
-      System.out.println("[" + id + "] " + "User permission DENIED: " + permission);
-    return res;
+    return registrar(policy.deny(permission), "DENIED", permission);
+  }
+
+  public boolean denyPermission(Permission permission, PermissionCondition condition) {
+    return registrar(policy.deny(permission, condition), "DENIED", permission);
   }
 
   /**
@@ -53,33 +51,33 @@ public class User implements Resource {
    * depender das permissões inline e das herdadas dos grupos.
    */
   public boolean allowPermission(Permission permission) {
-    var res = permissionHolder.allow(permission);
-    if (res)
-      System.out.println("[" + id + "] " + "User permission deny removed: " + permission);
-    return res;
+    return registrar(policy.allow(permission), "deny removed", permission);
   }
 
-  protected boolean hasInlinePermission(Permission permission) {
-    return permissionHolder.has(permission);
+  private boolean registrar(boolean mudou, String verbo, Permission permission) {
+    if (mudou)
+      System.out.println("[" + id + "] User permission " + verbo + ": " + permission);
+    return mudou;
   }
 
-  protected boolean hasInlineDeny(Permission permission) {
-    return permissionHolder.isDenied(permission);
+  /** A política inline. Visível só para o núcleo, que é quem resolve acesso. */
+  PermissionHolder getPolicy() {
+    return policy;
   }
 
   @JsonIgnore
   public Set<Permission> getInlinePermissions() {
-    return permissionHolder.getPermissions();
+    return policy.getPermissions();
   }
 
   @JsonIgnore
   public Set<Permission> getDeniedPermissions() {
-    return permissionHolder.getDeniedPermissions();
+    return policy.getDeniedPermissions();
   }
 
-  /** Esvazia as permissões inline (concedidas e negadas). */
-  protected void clearPermissions() {
-    permissionHolder.clear();
+  /** Esvazia a política inline (concessões e negações). */
+  public void clearPermissions() {
+    policy.clear();
   }
 
   // GROUPS
@@ -140,7 +138,7 @@ public class User implements Resource {
   }
 
   @Override
-  public ResourceTypes getType() {
-    return ResourceTypes.USUARIO;
+  public ResourceType getType() {
+    return PrincipalResource.USUARIO;
   }
 }

@@ -3,10 +3,10 @@ package poo.api;
 import poo.api.exceptions.ForbiddenException;
 import poo.api.exceptions.NotFoundException;
 import poo.api.exceptions.UnauthorizedException;
-import poo.iam.SecurityContext;
-import poo.iam.SystemPermission;
+import poo.classroom.iam.SecurityContext;
+import poo.classroom.iam.ClassroomPermission;
 import poo.iam.User;
-import poo.iam.resources.Resource;
+import poo.iam.Resource;
 import io.javalin.http.Context;
 
 public class Utils {
@@ -38,7 +38,7 @@ public class Utils {
     return user;
   }
 
-  public static boolean hasPermissionOrThrow(Context ctx, SystemPermission permission, Resource resource,
+  public static boolean hasPermissionOrThrow(Context ctx, ClassroomPermission permission, Resource resource,
       Object... args) {
     var user = findAuthUserOrThrow(ctx);
     if (!permission.isAllowed(user, resource, args))
@@ -46,11 +46,11 @@ public class Utils {
     return true;
   }
 
-  public static boolean hasPermissionOrThrow(Context ctx, SystemPermission permission, Resource resource) {
+  public static boolean hasPermissionOrThrow(Context ctx, ClassroomPermission permission, Resource resource) {
     return hasPermissionOrThrow(ctx, permission, resource, new Object[0]);
   }
 
-  public static boolean hasPermissionOrThrow(Context ctx, SystemPermission permission) {
+  public static boolean hasPermissionOrThrow(Context ctx, ClassroomPermission permission) {
     return hasPermissionOrThrow(ctx, permission, null, new Object[0]);
   }
 }

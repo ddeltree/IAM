@@ -6,7 +6,7 @@ import poo.api.exceptions.NotFoundException;
 import poo.classroom.Comentario;
 import poo.classroom.Publicacao;
 
-import static poo.iam.SystemPermission.*;
+import static poo.classroom.iam.ClassroomPermission.*;
 
 import java.util.*;
 

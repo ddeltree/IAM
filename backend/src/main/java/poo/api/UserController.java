@@ -4,8 +4,8 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import poo.api.exceptions.ForbiddenException;
 import poo.iam.MembershipManager;
-import poo.iam.SecurityContext;
-import static poo.iam.SystemPermission.*;
+import poo.classroom.iam.SecurityContext;
+import static poo.classroom.iam.ClassroomPermission.*;
 import poo.iam.User;
 
 import java.util.*;

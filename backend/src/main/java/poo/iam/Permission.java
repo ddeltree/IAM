@@ -2,25 +2,26 @@ package poo.iam;
 
 import java.util.Objects;
 
-import poo.iam.resources.Resource;
-import poo.iam.resources.ResourceTypes;
-
+/** O par (ação, tipo de recurso) — o "o quê" de uma autorização. */
 public class Permission {
-  private Action action;
-  private ResourceTypes resource;
+  private final Action action;
+  private final ResourceType resourceType;
 
-  public Permission(Action action, ResourceTypes resourceType) {
+  public Permission(Action action, ResourceType resourceType) {
     this.action = action;
-    this.resource = resourceType;
+    this.resourceType = resourceType;
   }
 
   public Permission(Action action, Resource resource) {
-    this.action = action;
-    this.resource = resource.getType();
+    this(action, resource.getType());
   }
 
   public Action getAction() {
     return action;
+  }
+
+  public ResourceType getResourceType() {
+    return resourceType;
   }
 
   @Override
@@ -30,16 +31,16 @@ public class Permission {
     if (!(o instanceof Permission))
       return false;
     Permission that = (Permission) o;
-    return action == that.action && resource == that.resource;
+    return action.equals(that.action) && resourceType.equals(that.resourceType);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(action, resource);
+    return Objects.hash(action, resourceType);
   }
 
   @Override
   public String toString() {
-    return action + ":" + resource;
+    return action.name() + ":" + resourceType.name();
   }
 }

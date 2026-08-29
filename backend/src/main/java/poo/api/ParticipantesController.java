@@ -1,10 +1,10 @@
 package poo.api;
 
-import static poo.iam.SystemPermission.*;
+import static poo.classroom.iam.ClassroomPermission.*;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import poo.iam.SecurityContext;
+import poo.classroom.iam.SecurityContext;
 
 public class ParticipantesController {
   public static void register(Javalin app) {

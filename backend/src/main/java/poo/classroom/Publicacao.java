@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import poo.iam.User;
-import poo.iam.resources.Resource;
+import poo.iam.Resource;
 
 public abstract class Publicacao implements Resource {
   private static long proximoId = 1;

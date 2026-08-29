@@ -1,7 +1,8 @@
 package poo.classroom;
 
 import poo.iam.User;
-import poo.iam.resources.ResourceTypes;
+import poo.iam.ResourceType;
+import poo.classroom.iam.ClassroomResource;
 
 public class Post extends Publicacao {
   public Post(String titulo, String corpo, User autor, Turma turma) {
@@ -12,8 +13,8 @@ public class Post extends Publicacao {
   }
 
   @Override
-  public ResourceTypes getType() {
-    return ResourceTypes.POST;
+  public ResourceType getType() {
+    return ClassroomResource.POST;
   }
 
   @Override

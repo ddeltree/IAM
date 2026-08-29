@@ -5,8 +5,9 @@ import java.util.Collections;
 import java.util.List;
 
 import poo.iam.User;
-import poo.iam.resources.Resource;
-import poo.iam.resources.ResourceTypes;
+import poo.iam.Resource;
+import poo.iam.ResourceType;
+import poo.classroom.iam.ClassroomResource;
 
 public class Turma implements Resource {
   private static long proximoId = 1; // contador global
@@ -88,8 +89,8 @@ public class Turma implements Resource {
   }
 
   @Override
-  public ResourceTypes getType() {
-    return ResourceTypes.TURMA;
+  public ResourceType getType() {
+    return ClassroomResource.TURMA;
   }
 
   @Override

@@ -10,8 +10,9 @@ import poo.api.UserController;
 import poo.api.exceptions.ForbiddenException;
 import poo.iam.Group;
 import poo.iam.MembershipManager;
-import poo.iam.SecurityContext;
-import poo.iam.SystemPermission;
+import poo.iam.PermissionCondition;
+import poo.classroom.iam.SecurityContext;
+import poo.classroom.iam.ClassroomPermission;
 import poo.iam.User;
 
 /**
@@ -20,7 +21,7 @@ import poo.iam.User;
  */
 public class PermissoesTest extends ApiFixture {
 
-  private static final SystemPermission PERM = SystemPermission.LISTAR_USUARIOS;
+  private static final ClassroomPermission PERM = ClassroomPermission.LISTAR_USUARIOS;
 
   @Test
   void semConcessaoNaoTemAcesso() {
@@ -113,6 +114,69 @@ public class PermissoesTest extends ApiFixture {
     assertFalse(user.getInlinePermissions().contains(PERM.get()));
   }
 
+
+  // --- concessões condicionais -------------------------------------------
+  //
+  // A condição pertence à concessão, e não à ação. É isso que permite conceder
+  // a mesma permissão com restrições diferentes a principais diferentes.
+
+  /** Só permite quando o recurso é o próprio usuário que está pedindo. */
+  private static final PermissionCondition SOBRE_SI_MESMO = (user, resource, ctx) -> user.equals(resource);
+
+  @Test
+  void concessaoCondicionalSoValeQuandoACondicaoPassa() {
+    var user = new User("condicional");
+    var outro = new User("outro");
+    user.grantPermission(PERM.get(), SOBRE_SI_MESMO);
+
+    assertTrue(PERM.isAllowed(user, user));
+    assertFalse(PERM.isAllowed(user, outro));
+  }
+
+  @Test
+  void mesmaPermissaoComCondicoesDiferentesEmCadaGrupo() {
+    var irrestrito = new Group("irrestrito");
+    irrestrito.grantPermission(PERM.get());
+    var restrito = new Group("restrito");
+    restrito.grantPermission(PERM.get(), SOBRE_SI_MESMO);
+
+    var moderador = new User("moderador");
+    MembershipManager.link(moderador, irrestrito);
+    var comum = new User("comum");
+    MembershipManager.link(comum, restrito);
+
+    var alvo = new User("alvo");
+    // o moderador alcança qualquer recurso; o comum, só a si mesmo
+    assertTrue(PERM.isAllowed(moderador, alvo));
+    assertFalse(PERM.isAllowed(comum, alvo));
+    assertTrue(PERM.isAllowed(comum, comum));
+  }
+
+  @Test
+  void concessoesDeGruposDiferentesSeSomam() {
+    var user = new User("somatorio");
+    var g1 = new Group("g1");
+    var g2 = new Group("g2");
+    g1.grantPermission(PERM.get(), SOBRE_SI_MESMO);
+    g2.grantPermission(PERM.get());
+    MembershipManager.link(user, g1);
+    MembershipManager.link(user, g2);
+
+    // a concessão irrestrita de g2 cobre o que a condição de g1 barraria
+    assertTrue(PERM.isAllowed(user, new User("qualquer")));
+  }
+
+  @Test
+  void negacaoCondicionalSoDerrubaOCasoQueEspecifica() {
+    var user = new User("negado em parte");
+    user.grantPermission(PERM.get());
+    user.denyPermission(PERM.get(), SOBRE_SI_MESMO);
+
+    // a negação vale só sobre si mesmo; nos demais recursos a concessão fica de pé
+    assertFalse(PERM.isAllowed(user, user));
+    assertTrue(PERM.isAllowed(user, new User("terceiro")));
+  }
+
   @Test
   void negarNoGrupoProfessoresBloqueiaACriacaoDeTurmas() {
     test((server, client) -> {
@@ -121,11 +185,11 @@ public class PermissoesTest extends ApiFixture {
 
       assertEquals(201, POST(client, "/turmas", PROF1_ID, Map.of("nome", "POO")).code());
 
-      professores.denyPermission(SystemPermission.CRIAR_TURMA.get());
+      professores.denyPermission(ClassroomPermission.CRIAR_TURMA.get());
       assertEquals(ForbiddenException.STATUS_CODE,
           POST(client, "/turmas", PROF1_ID, Map.of("nome", "POO II")).code());
 
-      professores.allowPermission(SystemPermission.CRIAR_TURMA.get());
+      professores.allowPermission(ClassroomPermission.CRIAR_TURMA.get());
       assertEquals(201, POST(client, "/turmas", PROF1_ID, Map.of("nome", "POO III")).code());
     });
   }
@@ -135,7 +199,7 @@ public class PermissoesTest extends ApiFixture {
     test((server, client) -> {
       criar2Professores2Alunos(client);
       var prof1 = UserController.getUser(String.valueOf(PROF1_ID));
-      prof1.denyPermission(SystemPermission.CRIAR_TURMA.get());
+      prof1.denyPermission(ClassroomPermission.CRIAR_TURMA.get());
 
       assertEquals(ForbiddenException.STATUS_CODE,
           POST(client, "/turmas", PROF1_ID, Map.of("nome", "POO")).code());
@@ -148,7 +212,7 @@ public class PermissoesTest extends ApiFixture {
   void resetRestauraAsPermissoesPadrao() {
     test((server, client) -> {
       criar2Professores2Alunos(client);
-      SecurityContext.getInstance().getProfessores().denyPermission(SystemPermission.CRIAR_TURMA.get());
+      SecurityContext.getInstance().getProfessores().denyPermission(ClassroomPermission.CRIAR_TURMA.get());
       assertEquals(ForbiddenException.STATUS_CODE,
           POST(client, "/turmas", PROF1_ID, Map.of("nome", "POO")).code());
     });

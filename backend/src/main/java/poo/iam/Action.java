@@ -1,36 +1,11 @@
 package poo.iam;
 
-public enum Action {
-  LISTAR_TURMAS_ADM,
-  LISTAR_TURMAS_PROFESSOR,
-  LISTAR_TURMAS_ALUNO,
-  LISTAR_ATIVIDADES,
-  LISTAR_POSTS,
-  LISTAR_COMENTARIOS,
-  LISTAR_PARTICIPANTES,
-  LISTAR_USUARIOS,
-  VER_PERFIL,
-  VER_TURMA,
-
-  CRIAR_TURMA,
-  CRIAR_ATIVIDADE,
-  CRIAR_POST,
-  CRIAR_COMENTARIO,
-  CRIAR_PROFESSOR,
-  CRIAR_ALUNO,
-
-  EDITAR_TURMA,
-  EDITAR_ATIVIDADE,
-  EDITAR_POST,
-  EDITAR_COMENTARIO,
-  EDITAR_USUARIO,
-
-  EXCLUIR_TURMA,
-  EXCLUIR_ATIVIDADE,
-  EXCLUIR_POST,
-  EXCLUIR_COMENTARIO,
-  EXCLUIR_USUARIO,
-
-  MATRICULAR_ALUNO,
-  DESMATRICULAR_ALUNO,
+/**
+ * O que se pode fazer. Vocabulário aberto de propósito: cada aplicação declara
+ * as próprias ações (normalmente como um enum que implementa esta interface),
+ * do mesmo jeito que a AWS usa nomes como {@code "s3:GetObject"} em vez de uma
+ * lista fechada dentro do IAM.
+ */
+public interface Action {
+  String name();
 }

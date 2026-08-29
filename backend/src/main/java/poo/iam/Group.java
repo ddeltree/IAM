@@ -3,13 +3,12 @@ package poo.iam;
 import java.util.*;
 
 public class Group {
-  private String name;
-  private Set<User> users;
-  private final PermissionHolder permissionHolder = new PermissionHolder(); // composition
+  private final String name;
+  private final Set<User> users = new HashSet<>();
+  private final PermissionHolder policy = new PermissionHolder(); // composition
 
   public Group(String name) {
     this.name = name;
-    this.users = new HashSet<>();
   }
 
   protected void addUser(User user) {
@@ -20,7 +19,8 @@ public class Group {
     users.remove(user);
   }
 
-  protected void clearUsers() {
+  /** Remove todos os membros. */
+  public void clearUsers() {
     users.clear();
   }
 
@@ -30,54 +30,62 @@ public class Group {
 
   // PERMISSIONS
 
+  /** Concessão irrestrita para todos os membros. */
   public boolean grantPermission(Permission permission) {
-    var res = permissionHolder.grant(permission);
-    if (res)
-      System.out.println("(" + name + ") " + "Group permission GRANTED: " + permission);
-    return res;
+    return registrar(policy.grant(permission), "GRANTED", permission);
+  }
+
+  /** Concessão válida só quando a condição passar. */
+  public boolean grantPermission(Permission permission, PermissionCondition condition) {
+    return registrar(policy.grant(permission, condition), "GRANTED", permission);
   }
 
   public boolean revokePermission(Permission permission) {
-    var res = permissionHolder.revoke(permission);
-    if (res)
-      System.out.println("(" + name + ") " + "Group permission REVOKED: " + permission);
-    return res;
+    return registrar(policy.revoke(permission), "REVOKED", permission);
   }
 
   /** Nega a permissão para todos os membros do grupo. */
   public boolean denyPermission(Permission permission) {
-    var res = permissionHolder.deny(permission);
-    if (res)
-      System.out.println("(" + name + ") " + "Group permission DENIED: " + permission);
-    return res;
+    return registrar(policy.deny(permission), "DENIED", permission);
+  }
+
+  public boolean denyPermission(Permission permission, PermissionCondition condition) {
+    return registrar(policy.deny(permission, condition), "DENIED", permission);
   }
 
   /** Remove a negação explícita do grupo. Não concede a permissão. */
   public boolean allowPermission(Permission permission) {
-    var res = permissionHolder.allow(permission);
-    if (res)
-      System.out.println("(" + name + ") " + "Group permission deny removed: " + permission);
-    return res;
+    return registrar(policy.allow(permission), "deny removed", permission);
+  }
+
+  private boolean registrar(boolean mudou, String verbo, Permission permission) {
+    if (mudou)
+      System.out.println("(" + name + ") Group permission " + verbo + ": " + permission);
+    return mudou;
+  }
+
+  PermissionHolder getPolicy() {
+    return policy;
   }
 
   public boolean hasPermission(Permission permission) {
-    return permissionHolder.has(permission);
+    return policy.has(permission);
   }
 
   public boolean deniesPermission(Permission permission) {
-    return permissionHolder.isDenied(permission);
+    return policy.isDenied(permission);
   }
 
   public Set<Permission> getPermissions() {
-    return permissionHolder.getPermissions();
+    return policy.getPermissions();
   }
 
   public Set<Permission> getDeniedPermissions() {
-    return permissionHolder.getDeniedPermissions();
+    return policy.getDeniedPermissions();
   }
 
-  /** Esvazia as permissões do grupo (concedidas e negadas). */
-  protected void clearPermissions() {
-    permissionHolder.clear();
+  /** Esvazia a política do grupo. */
+  public void clearPermissions() {
+    policy.clear();
   }
 }

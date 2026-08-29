@@ -4,8 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import poo.iam.User;
-import poo.iam.resources.Resource;
-import poo.iam.resources.ResourceTypes;
+import poo.iam.Resource;
+import poo.iam.ResourceType;
+import poo.classroom.iam.ClassroomResource;
 
 public class Comentario implements Resource {
   private static long proximoId = 1; // contador global
@@ -57,8 +58,8 @@ public class Comentario implements Resource {
   }
 
   @Override
-  public ResourceTypes getType() {
-    return ResourceTypes.COMENTARIO;
+  public ResourceType getType() {
+    return ClassroomResource.COMENTARIO;
   }
 
   @Override

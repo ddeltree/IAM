@@ -13,7 +13,7 @@ import poo.api.exceptions.NotFoundException;
 import poo.classroom.Comentario;
 import poo.classroom.Publicacao;
 import poo.classroom.Turma;
-import poo.iam.SecurityContext;
+import poo.classroom.iam.SecurityContext;
 import poo.iam.User;
 
 public class Main {

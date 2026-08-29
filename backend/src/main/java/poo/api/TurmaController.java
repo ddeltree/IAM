@@ -4,10 +4,10 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import poo.api.exceptions.NotFoundException;
 import poo.classroom.Turma;
-import poo.iam.SystemPermission;
+import poo.classroom.iam.ClassroomPermission;
 import poo.iam.User;
 
-import static poo.iam.SystemPermission.*;
+import static poo.classroom.iam.ClassroomPermission.*;
 
 import java.util.*;
 
@@ -35,8 +35,9 @@ public class TurmaController {
     var user = Utils.findAuthUserOrThrow(ctx);
     List<Turma> result = new ArrayList<>();
     for (Turma turma : turmas.values()) {
-      if (!(LISTAR_TURMAS_ADM.isAllowed(user) || LISTAR_TURMAS_PROFESSOR.isAllowed(user, turma)
-          || LISTAR_TURMAS_ALUNO.isAllowed(user, turma)))
+      // uma permissão só: o que muda por papel é a condição com que cada grupo
+      // a recebe (administrador sem restrição, professor e aluno pela turma)
+      if (!LISTAR_TURMAS.isAllowed(user, turma))
         continue;
       result.add(turma);
     }
@@ -51,7 +52,7 @@ public class TurmaController {
   }
 
   private static void criarTurma(Context ctx) {
-    if (!Utils.hasPermissionOrThrow(ctx, SystemPermission.CRIAR_TURMA))
+    if (!Utils.hasPermissionOrThrow(ctx, ClassroomPermission.CRIAR_TURMA))
       return;
     TurmaDTO dto = ctx.bodyAsClass(TurmaDTO.class);
     User professor = Utils.findAuthUserOrThrow(ctx);
@@ -62,7 +63,7 @@ public class TurmaController {
 
   private static void atualizarTurma(Context ctx) {
     var turma = findTurmaOrThrow(ctx);
-    if (!Utils.hasPermissionOrThrow(ctx, SystemPermission.EDITAR_TURMA, turma))
+    if (!Utils.hasPermissionOrThrow(ctx, ClassroomPermission.EDITAR_TURMA, turma))
       return;
     TurmaDTO dto = ctx.bodyAsClass(TurmaDTO.class);
     turma.setNome(dto.nome);
@@ -71,7 +72,7 @@ public class TurmaController {
 
   private static void excluirTurma(Context ctx) {
     var turma = findTurmaOrThrow(ctx);
-    if (!Utils.hasPermissionOrThrow(ctx, SystemPermission.EXCLUIR_TURMA, turma))
+    if (!Utils.hasPermissionOrThrow(ctx, ClassroomPermission.EXCLUIR_TURMA, turma))
       return;
     turmas.remove(turma.getId());
     PostController.removerPostsDe(turma);

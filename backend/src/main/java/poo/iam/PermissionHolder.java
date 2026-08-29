@@ -1,34 +1,43 @@
 package poo.iam;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
- * Conjunto de permissões de um {@link User} ou {@link Group}.
+ * A política de um {@link User} ou de um {@link Group}: um conjunto de
+ * {@link Statement}s.
  *
- * Guarda duas listas independentes: as permissões concedidas e as negadas
- * explicitamente. A negação nunca é apagada por uma concessão — quem resolve o
- * conflito é {@link SystemPermission}, que aplica a regra "deny overrides":
- * basta uma negação (no usuário ou em qualquer grupo dele) para o acesso cair.
+ * Guarda concessões e negações lado a lado, sem uma apagar a outra — quem
+ * resolve o conflito é o {@link AccessResolver}, aplicando "deny overrides".
  */
 public class PermissionHolder {
-  private final Set<Permission> permissions = new HashSet<>();
-  private final Set<Permission> deniedPermissions = new HashSet<>();
+  private final Set<Statement> statements = new LinkedHashSet<>();
+
+  public boolean add(Statement statement) {
+    return statements.add(statement);
+  }
 
   public boolean grant(Permission permission) {
-    return permissions.add(permission);
+    return add(Statement.allow(permission));
   }
 
+  public boolean grant(Permission permission, PermissionCondition condition) {
+    return add(Statement.allow(permission, condition));
+  }
+
+  /** Remove todas as concessões desta permissão, com ou sem condição. */
   public boolean revoke(Permission permission) {
-    return permissions.remove(permission);
-  }
-
-  public boolean has(Permission permission) {
-    return permissions.contains(permission);
+    return statements.removeIf(
+        s -> s.getEffect() == Effect.ALLOW && s.falaSobre(permission));
   }
 
   /** Nega a permissão explicitamente, sobrepondo qualquer concessão. */
   public boolean deny(Permission permission) {
-    return deniedPermissions.add(permission);
+    return add(Statement.deny(permission));
+  }
+
+  public boolean deny(Permission permission, PermissionCondition condition) {
+    return add(Statement.deny(permission, condition));
   }
 
   /**
@@ -36,24 +45,60 @@ public class PermissionHolder {
    * concedida aqui nem em um grupo, o acesso continua barrado.
    */
   public boolean allow(Permission permission) {
-    return deniedPermissions.remove(permission);
+    return statements.removeIf(
+        s -> s.getEffect() == Effect.DENY && s.falaSobre(permission));
+  }
+
+  /** Existe concessão aplicável a este pedido? */
+  public boolean permite(Permission permission, User user, Resource resource, Object... context) {
+    return algum(Effect.ALLOW, permission, user, resource, context);
+  }
+
+  /** Existe negação aplicável a este pedido? */
+  public boolean nega(Permission permission, User user, Resource resource, Object... context) {
+    return algum(Effect.DENY, permission, user, resource, context);
+  }
+
+  private boolean algum(Effect efeito, Permission permission, User user, Resource resource, Object... context) {
+    for (Statement statement : statements) {
+      if (statement.getEffect() == efeito && statement.aplica(permission, user, resource, context))
+        return true;
+    }
+    return false;
+  }
+
+  /** Ignora a condição: diz apenas que existe uma cláusula sobre a permissão. */
+  public boolean has(Permission permission) {
+    return statements.stream()
+        .anyMatch(s -> s.getEffect() == Effect.ALLOW && s.falaSobre(permission));
   }
 
   public boolean isDenied(Permission permission) {
-    return deniedPermissions.contains(permission);
+    return statements.stream()
+        .anyMatch(s -> s.getEffect() == Effect.DENY && s.falaSobre(permission));
+  }
+
+  public Set<Statement> getStatements() {
+    return Collections.unmodifiableSet(statements);
   }
 
   public Set<Permission> getPermissions() {
-    return Collections.unmodifiableSet(permissions);
+    return permissoesCom(Effect.ALLOW);
   }
 
   public Set<Permission> getDeniedPermissions() {
-    return Collections.unmodifiableSet(deniedPermissions);
+    return permissoesCom(Effect.DENY);
   }
 
-  /** Esvazia concessões e negações. */
+  private Set<Permission> permissoesCom(Effect efeito) {
+    return statements.stream()
+        .filter(s -> s.getEffect() == efeito)
+        .map(Statement::getPermission)
+        .collect(Collectors.toUnmodifiableSet());
+  }
+
+  /** Esvazia a política. */
   public void clear() {
-    permissions.clear();
-    deniedPermissions.clear();
+    statements.clear();
   }
 }

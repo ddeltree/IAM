@@ -1,6 +1,7 @@
 package poo.classroom;
 
-import poo.iam.resources.ResourceTypes;
+import poo.iam.ResourceType;
+import poo.classroom.iam.ClassroomResource;
 
 public class Atividade extends Publicacao {
   private String dataEntrega;
@@ -21,8 +22,8 @@ public class Atividade extends Publicacao {
   }
 
   @Override
-  public ResourceTypes getType() {
-    return ResourceTypes.ATIVIDADE;
+  public ResourceType getType() {
+    return ClassroomResource.ATIVIDADE;
   }
 
   @Override

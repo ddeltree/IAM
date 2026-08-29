@@ -6,7 +6,7 @@ import poo.api.exceptions.NotFoundException;
 import poo.classroom.Atividade;
 import poo.classroom.Turma;
 
-import static poo.iam.SystemPermission.*;
+import static poo.classroom.iam.ClassroomPermission.*;
 
 import java.util.*;
 
