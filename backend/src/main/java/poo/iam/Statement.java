@@ -14,11 +14,13 @@ public class Statement {
   private final Effect effect;
   private final Permission permission;
   private final PermissionCondition condition;
+  private final String sid;
 
   private Statement(Effect effect, Permission permission, PermissionCondition condition) {
     this.effect = effect;
     this.permission = permission;
     this.condition = condition;
+    this.sid = effect + ":" + permission;
   }
 
   public static Statement allow(Permission permission) {
@@ -44,6 +46,15 @@ public class Statement {
 
   public boolean falaSobre(Permission permission) {
     return this.permission.equals(permission);
+  }
+
+  /**
+   * Nome da cláusula, como o {@code Sid} da AWS. Serve para dizer qual delas
+   * decidiu um pedido; duas cláusulas que só diferem na condição compartilham o
+   * nome, e quem as separa é o principal a que estão anexadas.
+   */
+  public String getSid() {
+    return sid;
   }
 
   public Effect getEffect() {
@@ -83,6 +94,6 @@ public class Statement {
   @Override
   public String toString() {
     var restrita = condition != PermissionCondition.SEMPRE ? " (condicional)" : "";
-    return effect + " " + permission + restrita;
+    return sid + restrita;
   }
 }

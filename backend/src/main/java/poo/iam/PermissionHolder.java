@@ -51,20 +51,31 @@ public class PermissionHolder {
 
   /** Existe concessão aplicável a este pedido? */
   public boolean permite(Permission permission, User user, Resource resource, Object... context) {
-    return algum(Effect.ALLOW, permission, user, resource, context);
+    return concessaoQueAplica(permission, user, resource, context) != null;
   }
 
   /** Existe negação aplicável a este pedido? */
   public boolean nega(Permission permission, User user, Resource resource, Object... context) {
-    return algum(Effect.DENY, permission, user, resource, context);
+    return negacaoQueAplica(permission, user, resource, context) != null;
   }
 
-  private boolean algum(Effect efeito, Permission permission, User user, Resource resource, Object... context) {
+  /** A concessão que atende o pedido, ou {@code null}. Nomeá-la é o que
+   *  permite explicar a decisão depois. */
+  public Statement concessaoQueAplica(Permission permission, User user, Resource resource, Object... context) {
+    return primeira(Effect.ALLOW, permission, user, resource, context);
+  }
+
+  /** A negação que barra o pedido, ou {@code null}. */
+  public Statement negacaoQueAplica(Permission permission, User user, Resource resource, Object... context) {
+    return primeira(Effect.DENY, permission, user, resource, context);
+  }
+
+  private Statement primeira(Effect efeito, Permission permission, User user, Resource resource, Object... context) {
     for (Statement statement : statements) {
       if (statement.getEffect() == efeito && statement.aplica(permission, user, resource, context))
-        return true;
+        return statement;
     }
-    return false;
+    return null;
   }
 
   /** Ignora a condição: diz apenas que existe uma cláusula sobre a permissão. */

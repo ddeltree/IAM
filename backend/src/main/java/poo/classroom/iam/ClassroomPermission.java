@@ -5,6 +5,7 @@ import static poo.classroom.iam.ClassroomResource.*;
 
 import poo.iam.AccessResolver;
 import poo.iam.Action;
+import poo.iam.Decisao;
 import poo.iam.Permission;
 import poo.iam.PrincipalResource;
 import poo.iam.Resource;
@@ -60,6 +61,11 @@ public enum ClassroomPermission {
 
   public boolean isAllowed(User user, Resource resource, Object... context) {
     return AccessResolver.isAllowed(user, permission, resource, context);
+  }
+
+  /** Como {@link #isAllowed}, mas dizendo qual cláusula decidiu e por quê. */
+  public Decisao avaliar(User user, Resource resource, Object... context) {
+    return AccessResolver.avaliar(user, permission, resource, context);
   }
 
   /** Para as ações que não têm um recurso alvo, como criar uma turma. */

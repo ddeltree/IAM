@@ -1,5 +1,6 @@
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import poo.api.UserController;
 import poo.api.exceptions.ForbiddenException;
+import poo.iam.Decisao;
 import poo.iam.Group;
 import poo.iam.MembershipManager;
 import poo.iam.PermissionCondition;
@@ -114,6 +116,60 @@ public class PermissoesTest extends ApiFixture {
     assertFalse(user.getInlinePermissions().contains(PERM.get()));
   }
 
+
+
+  // --- decisão explicada ------------------------------------------------
+  //
+  // Saber que deu 403 não basta: o motor diz qual cláusula decidiu e onde ela
+  // estava. É o equivalente ao MatchedStatements do policy simulator da AWS.
+
+  @Test
+  void concessaoDeGrupoDizDeQualGrupoVeio() {
+    var user = new User("membro");
+    var grupo = new Group("Professores");
+    grupo.grantPermission(PERM.get());
+    MembershipManager.link(user, grupo);
+
+    var decisao = PERM.avaliar(user, null);
+    assertTrue(decisao.permitido());
+    assertEquals(Decisao.Tipo.PERMITIDO, decisao.getTipo());
+    assertEquals("Professores", decisao.getOrigem());
+    assertEquals("ALLOW:LISTAR_USUARIOS:USUARIO", decisao.getDecisiva().getSid());
+  }
+
+  @Test
+  void negacaoExplicitaSeDistingueDaNegacaoPadrao() {
+    var semNada = new User("sem nada");
+    var negado = new User("negado");
+    negado.denyPermission(PERM.get());
+
+    // ninguém concedeu
+    var padrao = PERM.avaliar(semNada, null);
+    assertEquals(Decisao.Tipo.NEGACAO_PADRAO, padrao.getTipo());
+    assertNull(padrao.getDecisiva());
+
+    // alguém negou de propósito
+    var explicita = PERM.avaliar(negado, null);
+    assertEquals(Decisao.Tipo.NEGACAO_EXPLICITA, explicita.getTipo());
+    assertEquals("inline", explicita.getOrigem());
+    assertEquals("DENY:LISTAR_USUARIOS:USUARIO", explicita.getDecisiva().getSid());
+  }
+
+  @Test
+  void negacaoDeGrupoApontaOGrupoQueBarrou() {
+    var user = new User("barrado");
+    var concede = new Group("Concede");
+    var barra = new Group("Barra");
+    concede.grantPermission(PERM.get());
+    barra.denyPermission(PERM.get());
+    MembershipManager.link(user, concede);
+    MembershipManager.link(user, barra);
+
+    var decisao = PERM.avaliar(user, null);
+    assertFalse(decisao.permitido());
+    assertEquals(Decisao.Tipo.NEGACAO_EXPLICITA, decisao.getTipo());
+    assertEquals("Barra", decisao.getOrigem());
+  }
 
   // --- concessões condicionais -------------------------------------------
   //

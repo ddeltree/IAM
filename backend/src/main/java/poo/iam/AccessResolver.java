@@ -9,34 +9,61 @@ package poo.iam;
  */
 public final class AccessResolver {
 
+  private static final String INLINE = "inline";
+
   private AccessResolver() {
   }
 
   public static boolean isAllowed(User user, Permission permission, Resource resource, Object... context) {
+    return avaliar(user, permission, resource, context).permitido();
+  }
+
+  /**
+   * Como {@link #isAllowed}, mas devolve também qual cláusula decidiu e onde
+   * ela estava. É o que sustenta a explicação de um 403.
+   */
+  public static Decisao avaliar(User user, Permission permission, Resource resource, Object... context) {
     if (user == null)
-      return false;
-    if (nega(user, permission, resource, context))
-      return false;
-    return permite(user, permission, resource, context);
+      return Decisao.negacaoPadrao("nenhum usuário autenticado");
+
+    var negacao = procurar(user, permission, resource, true, context);
+    if (negacao != null)
+      return Decisao.negacaoExplicita(negacao.statement, negacao.origem);
+
+    var concessao = procurar(user, permission, resource, false, context);
+    if (concessao != null)
+      return Decisao.permitido(concessao.statement, concessao.origem);
+
+    return Decisao.negacaoPadrao(
+        "nenhuma cláusula concede " + permission + " a " + user.getName());
   }
 
-  private static boolean nega(User user, Permission permission, Resource resource, Object... context) {
-    if (user.getPolicy().nega(permission, user, resource, context))
-      return true;
+  /** Varre a política inline e depois a de cada grupo, na mesma ordem sempre. */
+  private static Achado procurar(User user, Permission permission, Resource resource,
+      boolean negacao, Object... context) {
+    var inline = negacao
+        ? user.getPolicy().negacaoQueAplica(permission, user, resource, context)
+        : user.getPolicy().concessaoQueAplica(permission, user, resource, context);
+    if (inline != null)
+      return new Achado(inline, INLINE);
+
     for (Group group : user.getGroups()) {
-      if (group.getPolicy().nega(permission, user, resource, context))
-        return true;
+      var doGrupo = negacao
+          ? group.getPolicy().negacaoQueAplica(permission, user, resource, context)
+          : group.getPolicy().concessaoQueAplica(permission, user, resource, context);
+      if (doGrupo != null)
+        return new Achado(doGrupo, group.getName());
     }
-    return false;
+    return null;
   }
 
-  private static boolean permite(User user, Permission permission, Resource resource, Object... context) {
-    if (user.getPolicy().permite(permission, user, resource, context))
-      return true;
-    for (Group group : user.getGroups()) {
-      if (group.getPolicy().permite(permission, user, resource, context))
-        return true;
+  private static final class Achado {
+    final Statement statement;
+    final String origem;
+
+    Achado(Statement statement, String origem) {
+      this.statement = statement;
+      this.origem = origem;
     }
-    return false;
   }
 }
