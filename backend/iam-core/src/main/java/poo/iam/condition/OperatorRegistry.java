@@ -19,12 +19,18 @@ import java.util.Map;
 public final class OperatorRegistry {
 
   /** Só os embutidos, imutável: serve de semente e não aceita registro. */
-  private static final Map<String, ConditionOperator> EMBUTIDOS = Map.of(
-      Operadores.IGUAL.name(), Operadores.IGUAL,
-      Operadores.DIFERENTE.name(), Operadores.DIFERENTE,
-      Operadores.PARECIDO.name(), Operadores.PARECIDO,
-      Operadores.BOOLEANO.name(), Operadores.BOOLEANO,
-      Operadores.NULO.name(), Operadores.NULO);
+  private static final Map<String, ConditionOperator> EMBUTIDOS = Map.ofEntries(
+      Map.entry(Operadores.IGUAL.name(), Operadores.IGUAL),
+      Map.entry(Operadores.DIFERENTE.name(), Operadores.DIFERENTE),
+      Map.entry(Operadores.PARECIDO.name(), Operadores.PARECIDO),
+      Map.entry(Operadores.BOOLEANO.name(), Operadores.BOOLEANO),
+      Map.entry(Operadores.NULO.name(), Operadores.NULO),
+      Map.entry(Operadores.MAIOR.name(), Operadores.MAIOR),
+      Map.entry(Operadores.MAIOR_OU_IGUAL.name(), Operadores.MAIOR_OU_IGUAL),
+      Map.entry(Operadores.MENOR.name(), Operadores.MENOR),
+      Map.entry(Operadores.MENOR_OU_IGUAL.name(), Operadores.MENOR_OU_IGUAL),
+      Map.entry(Operadores.DATA_DEPOIS.name(), Operadores.DATA_DEPOIS),
+      Map.entry(Operadores.DATA_ANTES.name(), Operadores.DATA_ANTES));
 
   private static final OperatorRegistry PADRAO = new OperatorRegistry();
 
@@ -54,9 +60,19 @@ public final class OperatorRegistry {
     return this;
   }
 
+  /**
+   * Resolve o nome, entendendo os prefixos como decoradores sobre um operador
+   * base — que é como a AWS os trata, e a razão de não haver um operador
+   * separado para cada combinação. Eles se compõem:
+   * {@code SeExistir:ParaAlgumValor:Igual} é um nome válido.
+   */
   public ConditionOperator get(String nome) {
     if (nome.startsWith(Operadores.PARA_ALGUM_VALOR))
       return Operadores.paraAlgumValor(get(nome.substring(Operadores.PARA_ALGUM_VALOR.length())));
+    if (nome.startsWith(Operadores.PARA_TODO_VALOR))
+      return Operadores.paraTodoValor(get(nome.substring(Operadores.PARA_TODO_VALOR.length())));
+    if (nome.startsWith(Operadores.SE_EXISTIR))
+      return Operadores.seExistir(get(nome.substring(Operadores.SE_EXISTIR.length())));
 
     var operador = registro.get(nome);
     if (operador == null)

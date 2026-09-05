@@ -40,17 +40,30 @@ public final class AuthorizationEngine {
     return contexto;
   }
 
+  public boolean isAllowed(Principal principal, Permission permission, Resource resource) {
+    return avaliar(principal, permission, resource).permitido();
+  }
+
   public boolean isAllowed(Principal principal, Permission permission, Resource resource,
-      Object... context) {
-    return avaliar(principal, permission, resource, context).permitido();
+      java.util.Map<String, java.util.List<String>> chavesDaRequisicao) {
+    return avaliar(principal, permission, resource, chavesDaRequisicao).permitido();
+  }
+
+  public Decisao avaliar(Principal principal, Permission permission, Resource resource) {
+    return avaliar(principal, permission, resource, java.util.Map.of());
   }
 
   /**
    * Como {@link #isAllowed}, mas devolve também qual cláusula decidiu e onde
    * ela estava. É o que sustenta a explicação de um 403.
    */
+  /**
+   * @param chavesDaRequisicao o que só o chamador sabe — origem, horário do
+   *        pedido, cabeçalhos. Chegam ao contexto prefixadas com
+   *        {@code requisicao:}.
+   */
   public Decisao avaliar(Principal principal, Permission permission, Resource resource,
-      Object... context) {
+      java.util.Map<String, java.util.List<String>> chavesDaRequisicao) {
     if (principal == null)
       return Decisao.negacaoPadrao("nenhum usuário autenticado");
 
@@ -63,7 +76,7 @@ public final class AuthorizationEngine {
           permission + " não se aplica a um recurso do tipo " + resource.getType().name());
 
     // O contexto é montado uma vez e reaproveitado por todas as cláusulas.
-    var ctx = contexto.resolver(principal, resource, context);
+    var ctx = contexto.resolver(principal, resource, chavesDaRequisicao);
 
     var negacao = procurar(principal, permission, ctx, Effect.DENY);
     if (negacao != null)

@@ -9,6 +9,8 @@ public interface ConditionVisitor<R> {
 
   R visitarSempre(Sempre sempre);
 
+  R visitarNunca(Nunca nunca);
+
   R visitarComparacao(Comparacao comparacao);
 
   R visitarTodasAs(TodasAs todas);

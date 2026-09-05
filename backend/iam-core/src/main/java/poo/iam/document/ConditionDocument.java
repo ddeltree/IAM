@@ -66,6 +66,7 @@ public final class ConditionDocument {
         case "TodasAs" -> partes.add(new TodasAs(lerLista(valor, operadores)));
         case "AlgumaDas" -> partes.add(new AlgumaDas(lerLista(valor, operadores)));
         case "Negacao" -> partes.add(new Negacao(ler(valor, operadores)));
+        case "Nunca" -> partes.add(Condition.NUNCA);
         case "Opaca" -> throw new IllegalArgumentException(
             "Condição opaca não volta de documento: o que foi escrito é código, não dado");
         default -> partes.add(lerComparacoes(nome, valor, operadores));
@@ -110,6 +111,11 @@ public final class ConditionDocument {
     @Override
     public Object visitarSempre(Sempre sempre) {
       return null;
+    }
+
+    @Override
+    public Object visitarNunca(poo.iam.condition.Nunca nunca) {
+      return Map.of("Nunca", Map.of());
     }
 
     @Override

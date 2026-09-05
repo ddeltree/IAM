@@ -17,19 +17,22 @@ package poo.iam;
 @FunctionalInterface
 public interface PermissionCondition {
   /** Concessão irrestrita: vale para qualquer recurso. */
-  PermissionCondition SEMPRE = (principal, resource, context) -> true;
+  PermissionCondition SEMPRE = ctx -> true;
 
-  boolean test(Principal principal, Resource resource, Object... context);
+  /**
+   * Recebe o contexto inteiro — principal, recurso, atributos já resolvidos e
+   * chaves da requisição. Escrever a regra em Java custa a consultabilidade;
+   * não custa também o acesso aos dados.
+   */
+  boolean test(RequestContext ctx);
 
   /** Combina duas regras: basta uma passar. */
   default PermissionCondition or(PermissionCondition outra) {
-    return (principal, resource, context) -> test(principal, resource, context)
-        || outra.test(principal, resource, context);
+    return ctx -> test(ctx) || outra.test(ctx);
   }
 
   /** Combina duas regras: as duas precisam passar. */
   default PermissionCondition and(PermissionCondition outra) {
-    return (principal, resource, context) -> test(principal, resource, context)
-        && outra.test(principal, resource, context);
+    return ctx -> test(ctx) && outra.test(ctx);
   }
 }

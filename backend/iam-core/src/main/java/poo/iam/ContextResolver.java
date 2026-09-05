@@ -5,6 +5,11 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 
 import poo.iam.spi.AttributeProvider;
 
@@ -22,6 +27,7 @@ import poo.iam.spi.AttributeProvider;
 public final class ContextResolver {
 
   private final Map<ResourceType, AttributeProvider> provedores = new HashMap<>();
+  private Clock relogio = Clock.systemDefaultZone();
 
   public void registrar(AttributeProvider provedor) {
     provedores.put(provedor.tipo(), provedor);
@@ -32,8 +38,40 @@ public final class ContextResolver {
     provedores.clear();
   }
 
-  public RequestContext resolver(Principal principal, Resource alvo, Object... extra) {
+  /**
+   * De onde vem a hora publicada em {@code contexto:*}.
+   *
+   * Existe para poder ser fixado: uma política que só vale durante a aula é
+   * intestável se o relógio for o do sistema.
+   */
+  public ContextResolver comRelogio(Clock relogio) {
+    this.relogio = relogio == null ? Clock.systemDefaultZone() : relogio;
+    return this;
+  }
+
+  public RequestContext resolver(Principal principal, Resource alvo) {
+    return resolver(principal, alvo, Map.of());
+  }
+
+  /**
+   * @param chavesDaRequisicao o que só o chamador sabe — o IP de origem, o
+   *        método HTTP, um cabeçalho. É o equivalente às chaves {@code aws:*}
+   *        que o serviço acrescenta ao pedido, e o lugar por onde uma condição
+   *        alcança dados que não estão nem no principal nem no recurso.
+   */
+  public RequestContext resolver(Principal principal, Resource alvo,
+      Map<String, List<String>> chavesDaRequisicao) {
     var valores = new LinkedHashMap<String, List<String>>();
+
+    // primeiro as do chamador, para que as do núcleo não possam ser forjadas:
+    // putIfAbsent adiante faz as nossas perderem, então elas entram por último
+    if (chavesDaRequisicao != null)
+      chavesDaRequisicao.forEach((chave, valor) -> valores.put("requisicao:" + chave, valor));
+
+    var agora = OffsetDateTime.now(relogio).truncatedTo(ChronoUnit.SECONDS);
+    valores.put("contexto:instante", List.of(agora.toString()));
+    valores.put("contexto:data", List.of(agora.toLocalDate().toString()));
+    valores.put("contexto:hora", List.of(agora.toLocalTime().toString()));
 
     if (principal != null) {
       valores.put("principal:id", List.of(principal.getId()));
@@ -55,7 +93,7 @@ public final class ContextResolver {
       }
     }
 
-    return new RequestContext(principal, alvo, valores, extra);
+    return new RequestContext(principal, alvo, valores);
   }
 
   private Map<String, List<String>> atributosDe(Resource recurso) {

@@ -82,7 +82,7 @@ public class CondicoesTest extends ApiFixture {
    */
   @Test
   void condicaoOpacaAvaliaMasNaoSeDeixaInspecionar() {
-    PermissionCondition legado = (user, recurso, ctx) -> user.equals(recurso);
+    PermissionCondition legado = ctx -> ctx.getPrincipal().equals(ctx.getRecurso());
     var opaca = new CondicaoOpaca(legado);
     var alguem = new User("alguem");
 

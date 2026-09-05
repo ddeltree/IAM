@@ -5,6 +5,8 @@ import static poo.classroom.iam.ClassroomResource.*;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import poo.iam.Action;
 import poo.iam.Decisao;
@@ -108,13 +110,19 @@ public enum ClassroomPermission {
     return permission.getResourceType();
   }
 
-  public boolean isAllowed(User user, Resource resource, Object... context) {
-    return motor().isAllowed(user, permission, resource, context);
+  public boolean isAllowed(User user, Resource resource) {
+    return motor().isAllowed(user, permission, resource);
+  }
+
+  /** Com as chaves que só o chamador conhece — origem, cabeçalhos, horário. */
+  public boolean isAllowed(User user, Resource resource,
+      Map<String, List<String>> chavesDaRequisicao) {
+    return motor().isAllowed(user, permission, resource, chavesDaRequisicao);
   }
 
   /** Como {@link #isAllowed}, mas dizendo qual cláusula decidiu e por quê. */
-  public Decisao avaliar(User user, Resource resource, Object... context) {
-    return motor().avaliar(user, permission, resource, context);
+  public Decisao avaliar(User user, Resource resource) {
+    return motor().avaliar(user, permission, resource);
   }
 
   /**

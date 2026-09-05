@@ -45,6 +45,11 @@ public final class PrincipalConstraintExtractor implements ConditionVisitor<Prin
   }
 
   @Override
+  public PrincipalConstraint visitarNunca(poo.iam.condition.Nunca nunca) {
+    return PrincipalConstraint.ninguem();
+  }
+
+  @Override
   public PrincipalConstraint visitarComparacao(Comparacao comparacao) {
     var procuraOPrincipal = comparacao.getValores().contains(VAR_PRINCIPAL_ID);
 

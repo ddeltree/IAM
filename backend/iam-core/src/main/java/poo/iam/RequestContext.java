@@ -18,13 +18,11 @@ public final class RequestContext {
   private final Principal principal;
   private final Resource recurso;
   private final Map<String, List<String>> valores;
-  private final Object[] extra;
 
-  RequestContext(Principal principal, Resource recurso, Map<String, List<String>> valores, Object[] extra) {
+  RequestContext(Principal principal, Resource recurso, Map<String, List<String>> valores) {
     this.principal = principal;
     this.recurso = recurso;
     this.valores = Collections.unmodifiableMap(valores);
-    this.extra = extra == null ? new Object[0] : extra;
   }
 
   public List<String> get(String chave) {
@@ -47,8 +45,4 @@ public final class RequestContext {
     return recurso;
   }
 
-  /** O que a aplicação passou solto na chamada, ainda sem uso pelas condições. */
-  public Object[] getExtra() {
-    return extra;
-  }
 }

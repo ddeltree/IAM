@@ -39,6 +39,11 @@ public final class ResourceConstraintExtractor implements ConditionVisitor<Resou
   }
 
   @Override
+  public ResourceConstraint visitarNunca(poo.iam.condition.Nunca nunca) {
+    return ResourceConstraint.Nada.INSTANCIA;
+  }
+
+  @Override
   public ResourceConstraint visitarComparacao(Comparacao comparacao) {
     var chave = comparacao.getChave();
 

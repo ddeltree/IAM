@@ -23,7 +23,7 @@ public final class CondicaoOpaca implements Condition {
 
   @Override
   public boolean avaliar(RequestContext ctx) {
-    return legado.test(ctx.getPrincipal(), ctx.getRecurso(), ctx.getExtra());
+    return legado.test(ctx);
   }
 
   @Override

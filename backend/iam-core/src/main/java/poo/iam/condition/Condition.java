@@ -22,6 +22,9 @@ public interface Condition {
 
   Condition SEMPRE = Sempre.INSTANCIA;
 
+  /** Desliga a cláusula sem apagá-la. */
+  Condition NUNCA = Nunca.INSTANCIA;
+
   boolean avaliar(RequestContext ctx);
 
   /** As chaves de contexto que esta condição lê. */
@@ -66,5 +69,23 @@ public interface Condition {
 
   static Condition nao(Condition condicao) {
     return new Negacao(condicao);
+  }
+
+  /** O atributo é maior que este número. */
+  static Condition maiorQue(String chave, String valor) {
+    return new Comparacao(Operadores.MAIOR, chave, List.of(valor));
+  }
+
+  static Condition menorQue(String chave, String valor) {
+    return new Comparacao(Operadores.MENOR, chave, List.of(valor));
+  }
+
+  /** Depois deste instante, data ou hora ISO-8601. */
+  static Condition depoisDe(String chave, String quando) {
+    return new Comparacao(Operadores.DATA_DEPOIS, chave, List.of(quando));
+  }
+
+  static Condition antesDe(String chave, String quando) {
+    return new Comparacao(Operadores.DATA_ANTES, chave, List.of(quando));
   }
 }
