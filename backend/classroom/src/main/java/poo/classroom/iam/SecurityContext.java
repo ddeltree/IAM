@@ -3,8 +3,9 @@ package poo.classroom.iam;
 import static poo.classroom.iam.ClassroomConditions.*;
 import static poo.classroom.iam.ClassroomPermission.*;
 
-import poo.iam.ContextResolver;
 import poo.iam.Group;
+import poo.iam.Iam;
+import poo.iam.IamFactory;
 import poo.iam.User;
 
 /**
@@ -23,13 +24,27 @@ public class SecurityContext {
   private final User admin;
   private final Group alunos;
   private final Group professores;
+  private final Iam iam;
 
   private SecurityContext() {
     this.admin = new User("ADMIN");
     this.alunos = new Group("Alunos");
     this.professores = new Group("Professores");
-    registrarAtributos();
+    this.iam = montarIam();
     configurarPermissoesPadrao();
+  }
+
+  /**
+   * O componente de autorização desta aplicação.
+   *
+   * Ele é montado uma vez e vive aqui. Antes o motor era estático no núcleo e
+   * lia um resolvedor global — o que só funcionava porque há um sistema só
+   * neste processo. Agora o classroom é dono da instância dele, e o núcleo
+   * voltou a poder ser usado duas vezes no mesmo JVM sem que uma configuração
+   * apague a outra.
+   */
+  public Iam iam() {
+    return iam;
   }
 
   public static SecurityContext getInstance() {
@@ -46,18 +61,21 @@ public class SecurityContext {
     alunos.clearUsers();
     professores.clearPermissions();
     professores.clearUsers();
-    registrarAtributos();
     configurarPermissoesPadrao();
   }
 
   /**
    * As condições leem chaves como {@code turma:professorId}; sem os provedores
-   * registrados, todas elas silenciariam para falso e tudo viraria 403.
+   * de atributo, todas elas silenciariam para falso e tudo viraria 403.
+   *
+   * O {@code reset()} não refaz isto: os provedores são a adaptação do domínio
+   * ao núcleo, e não estado de cenário — o que os testes precisam reiniciar é a
+   * política, não a forma de ler uma turma.
    */
-  private void registrarAtributos() {
-    var resolver = ContextResolver.padrao();
-    resolver.limpar();
-    ClassroomAttributes.registrarTodos(resolver);
+  private static Iam montarIam() {
+    return IamFactory.novo()
+        .atributos(ClassroomAttributes.todos())
+        .construir();
   }
 
   private void configurarPermissoesPadrao() {

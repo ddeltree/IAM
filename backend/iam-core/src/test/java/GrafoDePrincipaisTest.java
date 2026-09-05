@@ -12,9 +12,8 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import poo.iam.AccessResolver;
 import poo.iam.Action;
-import poo.iam.ContextResolver;
+import poo.iam.IamFactory;
 import poo.iam.Permission;
 import poo.iam.Principal;
 import poo.iam.PrincipalResource;
@@ -82,14 +81,18 @@ class GrafoDePrincipaisTest {
 
   private static final Duration LIMITE = Duration.ofSeconds(2);
 
+  // sem provedor de atributo nenhum: estes cenários não olham recurso
+  private static final poo.iam.AuthorizationEngine MOTOR =
+      IamFactory.novo().construir().motor();
+
   @Test
   void umPrincipalQueHerdaDeSiMesmoNaoTrava() {
     var sozinho = new Qualquer("sozinho").concede(ENTRAR);
     sozinho.herdaDe(sozinho);
 
     assertTimeoutPreemptively(LIMITE, () -> {
-      assertTrue(AccessResolver.isAllowed(sozinho, ENTRAR, null));
-      assertFalse(AccessResolver.isAllowed(sozinho, SAIR, null));
+      assertTrue(MOTOR.isAllowed(sozinho, ENTRAR, null));
+      assertFalse(MOTOR.isAllowed(sozinho, SAIR, null));
     });
   }
 
@@ -102,23 +105,22 @@ class GrafoDePrincipaisTest {
 
     assertTimeoutPreemptively(LIMITE, () -> {
       // cada um alcança a política do outro, e nenhum se perde na volta
-      assertTrue(AccessResolver.isAllowed(a, ENTRAR, null));
-      assertTrue(AccessResolver.isAllowed(a, SAIR, null));
-      assertTrue(AccessResolver.isAllowed(b, ENTRAR, null));
-      assertTrue(AccessResolver.isAllowed(b, SAIR, null));
+      assertTrue(MOTOR.isAllowed(a, ENTRAR, null));
+      assertTrue(MOTOR.isAllowed(a, SAIR, null));
+      assertTrue(MOTOR.isAllowed(b, ENTRAR, null));
+      assertTrue(MOTOR.isAllowed(b, SAIR, null));
     });
   }
 
   @Test
   void aDecisaoDizDeQualPrincipalVeioAClausula() {
-    ContextResolver.padrao().limpar();
     var diretoria = new Qualquer("Diretoria").concede(SAIR);
     var pessoa = new Qualquer("pessoa").concede(ENTRAR).herdaDe(diretoria);
 
     // herdada: a decisão nomeia onde a cláusula estava
-    assertEquals("Diretoria", AccessResolver.avaliar(pessoa, SAIR, null).getOrigem());
+    assertEquals("Diretoria", MOTOR.avaliar(pessoa, SAIR, null).getOrigem());
     // própria: "inline", como na AWS
-    assertEquals("inline", AccessResolver.avaliar(pessoa, ENTRAR, null).getOrigem());
+    assertEquals("inline", MOTOR.avaliar(pessoa, ENTRAR, null).getOrigem());
   }
 
   @Test

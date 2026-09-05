@@ -64,7 +64,7 @@ public class QuemPodeTest extends ApiFixture {
       }
     };
 
-    return new Cenario(new PolicyQuery(diretorio), turma, post, comentario,
+    return new Cenario(new PolicyQuery(diretorio, SecurityContext.getInstance().iam().motor()), turma, post, comentario,
         prof, outroProf, aluno, estranho);
   }
 

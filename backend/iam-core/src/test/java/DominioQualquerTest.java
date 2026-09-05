@@ -8,9 +8,9 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import poo.iam.AccessResolver;
 import poo.iam.Action;
-import poo.iam.ContextResolver;
+import poo.iam.Iam;
+import poo.iam.IamFactory;
 import poo.iam.Group;
 import poo.iam.MembershipManager;
 import poo.iam.Permission;
@@ -71,8 +71,8 @@ class DominioQualquerTest {
   }
 
   /** A adaptação inteira: como ler os atributos de cada tipo. */
-  static void registrarAtributos(ContextResolver resolver) {
-    resolver.registrar(new AttributeProvider() {
+  static AttributeProvider[] atributos() {
+    return new AttributeProvider[] { new AttributeProvider() {
       public ResourceType tipo() {
         return TipoDeArquivo.PASTA;
       }
@@ -80,8 +80,7 @@ class DominioQualquerTest {
       public Map<String, List<String>> atributosDe(Resource r) {
         return Map.of("donoId", List.of(((Pasta) r).donoId()));
       }
-    });
-    resolver.registrar(new AttributeProvider() {
+    }, new AttributeProvider() {
       public ResourceType tipo() {
         return TipoDeArquivo.ARQUIVO;
       }
@@ -89,7 +88,7 @@ class DominioQualquerTest {
       public Map<String, List<String>> atributosDe(Resource r) {
         return Map.of("autorId", List.of(((Arquivo) r).autorId()));
       }
-    });
+    } };
   }
 
   // ---------- a política ----------
@@ -102,6 +101,7 @@ class DominioQualquerTest {
   static final Condition AUTOR = Condition.igual("recurso:autorId", "${principal:id}");
   static final Condition DONO_DA_PASTA = Condition.igual("pasta:donoId", "${principal:id}");
 
+  private Iam iam;
   private User ana;
   private User bruno;
   private Group colaboradores;
@@ -110,8 +110,9 @@ class DominioQualquerTest {
 
   @BeforeEach
   void montar() {
-    ContextResolver.padrao().limpar();
-    registrarAtributos(ContextResolver.padrao());
+    // o componente inteiro montado em duas linhas, com o que só esta
+    // aplicação-brinquedo sabe: como ler um atributo de pasta e de arquivo
+    iam = IamFactory.novo().atributos(atributos()).construir();
 
     ana = new User("Ana");
     bruno = new User("Bruno");
@@ -128,8 +129,8 @@ class DominioQualquerTest {
 
   @Test
   void oAutorLeOProprioArquivo() {
-    assertTrue(AccessResolver.isAllowed(ana, LER_ARQUIVO, deAna));
-    assertFalse(AccessResolver.isAllowed(bruno, LER_ARQUIVO, deAna),
+    assertTrue(iam.motor().isAllowed(ana, LER_ARQUIVO, deAna));
+    assertFalse(iam.motor().isAllowed(bruno, LER_ARQUIVO, deAna),
         "Bruno não é o autor, e a permissão de ler não olha a pasta");
   }
 
@@ -137,13 +138,13 @@ class DominioQualquerTest {
   void oDonoDaPastaApagaOQueEstaNela() {
     // a condição fala da pasta, mas o recurso avaliado é o arquivo: quem
     // alcança um pelo outro é a corrente de getPai(), sem ninguém navegar à mão
-    assertTrue(AccessResolver.isAllowed(bruno, APAGAR_ARQUIVO, deAna));
-    assertTrue(AccessResolver.isAllowed(ana, APAGAR_ARQUIVO, deAna), "Ana é a autora");
+    assertTrue(iam.motor().isAllowed(bruno, APAGAR_ARQUIVO, deAna));
+    assertTrue(iam.motor().isAllowed(ana, APAGAR_ARQUIVO, deAna), "Ana é a autora");
   }
 
   @Test
   void umaPermissaoNaoAlcancaORecursoErrado() {
-    assertFalse(AccessResolver.isAllowed(bruno, APAGAR_ARQUIVO, pasta),
+    assertFalse(iam.motor().isAllowed(bruno, APAGAR_ARQUIVO, pasta),
         "APAGAR_ARQUIVO é sobre ARQUIVO; recebendo uma PASTA, não se aplica");
   }
 
@@ -164,5 +165,33 @@ class DominioQualquerTest {
     // a condição saiu como dado, com o vocabulário deste domínio dentro
     assertTrue(apagar.get("condition").toString().contains("pasta:donoId"),
         "a condição não apareceu no documento: " + apagar);
+  }
+
+  @Test
+  void doisComponentesNoMesmoProcessoNaoSeAtropelam() {
+    // outra aplicação, no mesmo JVM, que lê o mesmo tipo de recurso de um jeito
+    // diferente: para ela o dono de uma pasta é sempre a Ana
+    var outra = IamFactory.novo().atributos(new AttributeProvider() {
+      public ResourceType tipo() {
+        return TipoDeArquivo.ARQUIVO;
+      }
+
+      public Map<String, List<String>> atributosDe(Resource r) {
+        return Map.of("autorId", List.of(ana.getId()));
+      }
+    }).construir();
+
+    var deBruno = new Arquivo("a2", bruno.getId(), pasta);
+
+    // o motor daqui lê o autor de verdade
+    assertTrue(iam.motor().isAllowed(bruno, LER_ARQUIVO, deBruno));
+    assertFalse(iam.motor().isAllowed(ana, LER_ARQUIVO, deBruno));
+
+    // e o outro, o que a configuração dele manda — sem que um altere o outro
+    assertTrue(outra.motor().isAllowed(ana, LER_ARQUIVO, deBruno));
+    assertFalse(outra.motor().isAllowed(bruno, LER_ARQUIVO, deBruno));
+
+    // conferindo que o primeiro seguiu intacto depois de o segundo ser montado
+    assertTrue(iam.motor().isAllowed(bruno, LER_ARQUIVO, deBruno));
   }
 }

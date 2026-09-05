@@ -13,7 +13,6 @@ import poo.classroom.Comentario;
 import poo.classroom.Post;
 import poo.classroom.Turma;
 import poo.classroom.iam.SecurityContext;
-import poo.iam.ContextResolver;
 import poo.iam.MembershipManager;
 import poo.iam.document.PolicyDocument;
 import poo.iam.RequestContext;
@@ -87,7 +86,7 @@ public class PoliticaJsonTest extends ApiFixture {
     var contextos = new ArrayList<RequestContext>();
     for (User u : principais)
       for (Resource r : recursos)
-        contextos.add(ContextResolver.padrao().resolver(u, r));
+        contextos.add(SecurityContext.getInstance().iam().contexto().resolver(u, r));
 
     var todas = new ArrayList<Statement>();
     todas.addAll(auth.getAdmin().getStatements());

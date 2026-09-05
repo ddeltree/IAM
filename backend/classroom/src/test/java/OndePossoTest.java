@@ -10,7 +10,6 @@ import poo.classroom.Turma;
 import poo.classroom.iam.ClassroomPermission;
 import poo.classroom.iam.ClassroomSqlMapping;
 import poo.classroom.iam.SecurityContext;
-import poo.iam.AccessResolver;
 import poo.iam.Group;
 import poo.iam.MembershipManager;
 import poo.iam.spi.PrincipalDirectory;
@@ -39,7 +38,7 @@ public class OndePossoTest extends ApiFixture {
       public Collection<Group> grupos() {
         return List.of(auth.getProfessores(), auth.getAlunos());
       }
-    });
+    }, auth.iam().motor());
   }
 
   @Test
@@ -85,7 +84,7 @@ public class OndePossoTest extends ApiFixture {
     for (User quem : List.of(prof, outroProf, aluno, auth.getAdmin())) {
       var filtrado = q.filtrar(quem, permissao, turmas).stream().map(Turma::getId).sorted().toList();
       var peloMotor = turmas.stream()
-          .filter(t -> AccessResolver.isAllowed(quem, permissao, t))
+          .filter(t -> SecurityContext.getInstance().iam().motor().isAllowed(quem, permissao, t))
           .map(Turma::getId).sorted().toList();
       assertEquals(peloMotor, filtrado, "divergência para " + quem.getName());
     }

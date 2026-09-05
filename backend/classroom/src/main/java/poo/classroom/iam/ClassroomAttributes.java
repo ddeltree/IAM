@@ -26,13 +26,15 @@ public final class ClassroomAttributes {
   private ClassroomAttributes() {
   }
 
-  /** Registra todos os provedores. Chamado na criação e no reset do contexto. */
-  public static void registrarTodos(ContextResolver resolver) {
-    resolver.registrar(provedor(ClassroomResource.TURMA, ClassroomAttributes::daTurma));
-    resolver.registrar(provedor(ClassroomResource.POST, ClassroomAttributes::daPublicacao));
-    resolver.registrar(provedor(ClassroomResource.ATIVIDADE, ClassroomAttributes::daPublicacao));
-    resolver.registrar(provedor(ClassroomResource.COMENTARIO, ClassroomAttributes::doComentario));
-    resolver.registrar(provedor(PrincipalResource.USUARIO, ClassroomAttributes::doUsuario));
+  /** Todos os provedores desta aplicação — o que se entrega à IamFactory. */
+  public static AttributeProvider[] todos() {
+    return new AttributeProvider[] {
+        provedor(ClassroomResource.TURMA, ClassroomAttributes::daTurma),
+        provedor(ClassroomResource.POST, ClassroomAttributes::daPublicacao),
+        provedor(ClassroomResource.ATIVIDADE, ClassroomAttributes::daPublicacao),
+        provedor(ClassroomResource.COMENTARIO, ClassroomAttributes::doComentario),
+        provedor(PrincipalResource.USUARIO, ClassroomAttributes::doUsuario),
+    };
   }
 
   private static Map<String, List<String>> daTurma(Resource recurso) {

@@ -3,7 +3,6 @@ package poo.classroom.iam;
 import static poo.classroom.iam.ClassroomAction.*;
 import static poo.classroom.iam.ClassroomResource.*;
 
-import poo.iam.AccessResolver;
 import poo.iam.Action;
 import poo.iam.Decisao;
 import poo.iam.Permission;
@@ -84,12 +83,20 @@ public enum ClassroomPermission {
   }
 
   public boolean isAllowed(User user, Resource resource, Object... context) {
-    return AccessResolver.isAllowed(user, permission, resource, context);
+    return motor().isAllowed(user, permission, resource, context);
   }
 
   /** Como {@link #isAllowed}, mas dizendo qual cláusula decidiu e por quê. */
   public Decisao avaliar(User user, Resource resource, Object... context) {
-    return AccessResolver.avaliar(user, permission, resource, context);
+    return motor().avaliar(user, permission, resource, context);
+  }
+
+  /**
+   * O motor desta aplicação. Não é mais um estático do núcleo: é a instância
+   * que o {@link SecurityContext} montou com os provedores de atributo daqui.
+   */
+  private static poo.iam.AuthorizationEngine motor() {
+    return SecurityContext.getInstance().iam().motor();
   }
 
   /** Para as ações que não têm um recurso alvo, como criar uma turma. */

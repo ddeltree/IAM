@@ -6,8 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import poo.iam.AccessResolver;
-import poo.iam.ContextResolver;
+import poo.iam.AuthorizationEngine;
 import poo.iam.Effect;
 import poo.iam.Group;
 import poo.iam.Permission;
@@ -30,9 +29,11 @@ import poo.iam.User;
 public final class PolicyQuery {
 
   private final PrincipalDirectory diretorio;
+  private final AuthorizationEngine motor;
 
-  public PolicyQuery(PrincipalDirectory diretorio) {
+  public PolicyQuery(PrincipalDirectory diretorio, AuthorizationEngine motor) {
     this.diretorio = diretorio;
+    this.motor = motor;
   }
 
   /** O resultado, com o rastro de quanto trabalho foi evitado. */
@@ -53,7 +54,7 @@ public final class PolicyQuery {
   /** Implementação de referência: pergunta ao motor sobre todo mundo. */
   public List<User> quemPodeVarrendo(Permission permissao, Resource recurso) {
     return diretorio.usuarios().stream()
-        .filter(u -> AccessResolver.isAllowed(u, permissao, recurso))
+        .filter(u -> motor.isAllowed(u, permissao, recurso))
         .toList();
   }
 
@@ -65,7 +66,7 @@ public final class PolicyQuery {
     var aAvaliar = candidatos == null ? new ArrayList<>(diretorio.usuarios()) : candidatos;
 
     var permitidos = aAvaliar.stream()
-        .filter(u -> AccessResolver.isAllowed(u, permissao, recurso))
+        .filter(u -> motor.isAllowed(u, permissao, recurso))
         .toList();
 
     return new Resultado(permitidos, aAvaliar.size(), conhecidos, candidatos != null);
@@ -77,7 +78,7 @@ public final class PolicyQuery {
    */
   private List<User> candidatos(Permission permissao, Resource recurso) {
     // o contexto vai sem principal: é justamente o lado que fica em aberto
-    var doRecurso = ContextResolver.padrao().resolver(null, recurso);
+    var doRecurso = motor.getContexto().resolver(null, recurso);
     var candidatos = new LinkedHashSet<User>();
 
     for (Group grupo : diretorio.grupos()) {
@@ -105,7 +106,7 @@ public final class PolicyQuery {
    * alcança. Vale a mesma regra — o filtro escolhe candidatos, o motor decide.
    */
   public ResourceConstraint ondePosso(User principal, Permission permissao) {
-    var doPrincipal = ContextResolver.padrao().resolver(principal, null);
+    var doPrincipal = motor.getContexto().resolver(principal, null);
     var partes = new ArrayList<ResourceConstraint>();
 
     for (Statement statement : concessoes(principal.getStatements(), permissao))
@@ -130,10 +131,10 @@ public final class PolicyQuery {
    */
   public <T extends Resource> List<T> filtrar(User principal, Permission permissao,
       Collection<T> candidatos) {
-    var filtro = PredicateRenderer.render(ondePosso(principal, permissao));
+    var filtro = PredicateRenderer.render(ondePosso(principal, permissao), motor.getContexto());
     return candidatos.stream()
         .filter(filtro)
-        .filter(r -> AccessResolver.isAllowed(principal, permissao, r))
+        .filter(r -> motor.isAllowed(principal, permissao, r))
         .toList();
   }
 

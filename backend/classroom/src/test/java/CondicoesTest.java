@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import poo.classroom.Post;
 import poo.classroom.Turma;
 import poo.classroom.iam.ClassroomConditions;
-import poo.iam.ContextResolver;
+import poo.classroom.iam.SecurityContext;
 import poo.iam.PermissionCondition;
 import poo.iam.User;
 import poo.iam.condition.CondicaoOpaca;
@@ -30,7 +30,7 @@ public class CondicoesTest extends ApiFixture {
     var aluno = new User("aluno");
     var post = postDe(prof, aluno);
 
-    var ctx = ContextResolver.padrao().resolver(aluno, post);
+    var ctx = SecurityContext.getInstance().iam().contexto().resolver(aluno, post);
 
     // do próprio post
     assertEquals(java.util.List.of(aluno.getId()), ctx.get("post:autorId"));
@@ -49,9 +49,9 @@ public class CondicoesTest extends ApiFixture {
 
     // uma cláusula só, que serve a qualquer usuário
     assertTrue(ClassroomConditions.AUTOR.avaliar(
-        ContextResolver.padrao().resolver(aluno, post)));
+        SecurityContext.getInstance().iam().contexto().resolver(aluno, post)));
     assertFalse(ClassroomConditions.AUTOR.avaliar(
-        ContextResolver.padrao().resolver(prof, post)));
+        SecurityContext.getInstance().iam().contexto().resolver(prof, post)));
   }
 
   @Test
@@ -69,10 +69,10 @@ public class CondicoesTest extends ApiFixture {
     var turma = new Turma("POO", prof);
     turma.adicionarAluno(aluno);
 
-    var doAluno = ContextResolver.padrao().resolver(aluno, turma);
+    var doAluno = SecurityContext.getInstance().iam().contexto().resolver(aluno, turma);
     assertTrue(ClassroomConditions.ALUNO_MATRICULADO.avaliar(doAluno));
 
-    var deFora = ContextResolver.padrao().resolver(new User("de fora"), turma);
+    var deFora = SecurityContext.getInstance().iam().contexto().resolver(new User("de fora"), turma);
     assertFalse(ClassroomConditions.ALUNO_MATRICULADO.avaliar(deFora));
   }
 
@@ -86,8 +86,8 @@ public class CondicoesTest extends ApiFixture {
     var opaca = new CondicaoOpaca(legado);
     var alguem = new User("alguem");
 
-    assertTrue(opaca.avaliar(ContextResolver.padrao().resolver(alguem, alguem)));
-    assertFalse(opaca.avaliar(ContextResolver.padrao().resolver(alguem, new User("outro"))));
+    assertTrue(opaca.avaliar(SecurityContext.getInstance().iam().contexto().resolver(alguem, alguem)));
+    assertFalse(opaca.avaliar(SecurityContext.getInstance().iam().contexto().resolver(alguem, new User("outro"))));
 
     // não declara chave nenhuma: quem inspeciona recebe "não sei"
     assertTrue(opaca.chaves().isEmpty());

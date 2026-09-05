@@ -11,7 +11,7 @@ import poo.iam.condition.CondicaoOpaca;
 import poo.iam.condition.Condition;
 import poo.iam.condition.ConditionVisitor;
 import poo.iam.condition.Negacao;
-import poo.iam.condition.Operadores;
+import poo.iam.condition.OperatorRegistry;
 import poo.iam.condition.Sempre;
 import poo.iam.condition.TodasAs;
 
@@ -42,8 +42,16 @@ public final class ConditionDocument {
     return condicao.accept(new Escritor());
   }
 
-  /** Lê o que {@link #escrever} produziu: {@code Map}, {@code List} e texto. */
+  /**
+   * Lê o que {@link #escrever} produziu, usando só os operadores embutidos.
+   * Uma aplicação com operadores próprios passa o registro dela.
+   */
   public static Condition ler(Object node) {
+    return ler(node, OperatorRegistry.padrao());
+  }
+
+  /** Lê o que {@link #escrever} produziu: {@code Map}, {@code List} e texto. */
+  public static Condition ler(Object node, OperatorRegistry operadores) {
     if (node == null)
       return Condition.SEMPRE;
     if (!(node instanceof Map))
@@ -55,12 +63,12 @@ public final class ConditionDocument {
       var nome = String.valueOf(entrada.getKey());
       var valor = entrada.getValue();
       switch (nome) {
-        case "TodasAs" -> partes.add(new TodasAs(lerLista(valor)));
-        case "AlgumaDas" -> partes.add(new AlgumaDas(lerLista(valor)));
-        case "Negacao" -> partes.add(new Negacao(ler(valor)));
+        case "TodasAs" -> partes.add(new TodasAs(lerLista(valor, operadores)));
+        case "AlgumaDas" -> partes.add(new AlgumaDas(lerLista(valor, operadores)));
+        case "Negacao" -> partes.add(new Negacao(ler(valor, operadores)));
         case "Opaca" -> throw new IllegalArgumentException(
             "Condição opaca não volta de documento: o que foi escrito é código, não dado");
-        default -> partes.add(lerComparacoes(nome, valor));
+        default -> partes.add(lerComparacoes(nome, valor, operadores));
       }
     }
     if (partes.isEmpty())
@@ -69,18 +77,19 @@ public final class ConditionDocument {
     return partes.size() == 1 ? partes.get(0) : new TodasAs(partes);
   }
 
-  private static List<Condition> lerLista(Object node) {
+  private static List<Condition> lerLista(Object node, OperatorRegistry operadores) {
     if (!(node instanceof List))
       throw new IllegalArgumentException("TodasAs e AlgumaDas esperam uma lista de condições");
     var res = new ArrayList<Condition>();
     for (Object item : (List<?>) node)
-      res.add(ler(item));
+      res.add(ler(item, operadores));
     return res;
   }
 
   /** {@code { "Igual": { "chave": [...], "outra": [...] } }} */
-  private static Condition lerComparacoes(String operador, Object porChave) {
-    var op = Operadores.get(operador);
+  private static Condition lerComparacoes(String operador, Object porChave,
+      OperatorRegistry operadores) {
+    var op = operadores.get(operador);
     if (!(porChave instanceof Map))
       throw new IllegalArgumentException(
           "O operador " + operador + " espera um objeto de chave para valores");

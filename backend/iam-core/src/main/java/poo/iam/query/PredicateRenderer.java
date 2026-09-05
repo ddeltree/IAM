@@ -11,11 +11,24 @@ import poo.iam.query.ResourceConstraint.Nada;
 import poo.iam.query.ResourceConstraint.Todas;
 import poo.iam.query.ResourceConstraint.Tudo;
 
-/** Aplica o filtro sobre objetos em memória. */
+/**
+ * Aplica o filtro sobre objetos em memória.
+ *
+ * O par deste é o {@link SqlWhereRenderer}: os dois percorrem a mesma
+ * {@link ResourceConstraint} e a escrevem em lugares diferentes. Este precisa
+ * do {@link ContextResolver} porque ler o atributo de um objeto é justamente o
+ * que só a aplicação sabe fazer.
+ */
 public final class PredicateRenderer implements ConstraintVisitor<Predicate<Resource>> {
 
-  public static Predicate<Resource> render(ResourceConstraint constraint) {
-    return constraint.accept(new PredicateRenderer());
+  private final ContextResolver contexto;
+
+  public PredicateRenderer(ContextResolver contexto) {
+    this.contexto = contexto;
+  }
+
+  public static Predicate<Resource> render(ResourceConstraint constraint, ContextResolver contexto) {
+    return constraint.accept(new PredicateRenderer(contexto));
   }
 
   @Override
@@ -48,7 +61,7 @@ public final class PredicateRenderer implements ConstraintVisitor<Predicate<Reso
     return recurso -> alguma.getPartes().stream().anyMatch(p -> p.accept(this).test(recurso));
   }
 
-  private static java.util.List<String> valores(Resource recurso, String chave) {
-    return ContextResolver.padrao().resolver(null, recurso).get(chave);
+  private java.util.List<String> valores(Resource recurso, String chave) {
+    return contexto.resolver(null, recurso).get(chave);
   }
 }

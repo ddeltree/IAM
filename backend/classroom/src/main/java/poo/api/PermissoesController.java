@@ -44,6 +44,18 @@ public class PermissoesController {
    * Devolve o filtro que a política produz — em texto, e também traduzido para
    * SQL, para mostrar que a mesma restrição vale em memória e no banco.
    */
+  /**
+   * As consultas sobre a política, com o motor desta aplicação.
+   *
+   * O diretório fica aqui, e não no SecurityContext, porque quem sabe onde os
+   * usuários estão guardados é esta camada — o módulo de autorização não deve
+   * conhecer um controller.
+   */
+  private static PolicyQuery consultas() {
+    return new PolicyQuery(DIRETORIO,
+        poo.classroom.iam.SecurityContext.getInstance().iam().motor());
+  }
+
   private static void ondePosso(Context ctx) {
     var user = Utils.findAuthUserOrThrow(ctx);
     var acao = ctx.queryParam("acao");
@@ -51,7 +63,7 @@ public class PermissoesController {
       throw new poo.api.exceptions.NotFoundException("Informe a acao");
 
     var permissao = ClassroomPermission.valueOf(acao).get();
-    var consulta = new PolicyQuery(DIRETORIO);
+    var consulta = consultas();
     var filtro = consulta.ondePosso(user, permissao);
 
     // aplicado às turmas: o filtro escolhe candidatos, o motor confirma
@@ -80,7 +92,7 @@ public class PermissoesController {
       throw new poo.api.exceptions.NotFoundException("Informe acao e recurso (TIPO/id)");
 
     var permissao = ClassroomPermission.valueOf(acao).get();
-    var consulta = new PolicyQuery(DIRETORIO);
+    var consulta = consultas();
     var resultado = consulta.quemPode(permissao, recurso);
 
     var principais = resultado.principais.stream()

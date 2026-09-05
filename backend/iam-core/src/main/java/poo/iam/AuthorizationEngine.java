@@ -15,15 +15,32 @@ import java.util.Set;
  * especial escrito aqui dentro — "primeiro o inline, depois cada grupo" —, e
  * virar travessia genérica é o que permite grupos, papéis e sessões usarem o
  * mesmo algoritmo em vez de cada um ganhar um ramo no avaliador.
+ *
+ * <h2>Por que é instância</h2>
+ *
+ * Isto já foi uma classe de métodos estáticos que lia um {@link
+ * ContextResolver} global. Funcionava enquanto houvesse um sistema só por
+ * processo — mas um componente reutilizável não pode assumir isso: duas
+ * aplicações no mesmo JVM registrariam provedores de atributos uma por cima da
+ * outra, e a segunda a subir venceria em silêncio. Cada motor carrega o
+ * contexto dele. Monte um com {@link IamFactory}.
  */
-public final class AccessResolver {
+public final class AuthorizationEngine {
 
   private static final String INLINE = "inline";
 
-  private AccessResolver() {
+  private final ContextResolver contexto;
+
+  public AuthorizationEngine(ContextResolver contexto) {
+    this.contexto = contexto == null ? new ContextResolver() : contexto;
   }
 
-  public static boolean isAllowed(Principal principal, Permission permission, Resource resource,
+  /** Como o núcleo lê os atributos dos recursos desta aplicação. */
+  public ContextResolver getContexto() {
+    return contexto;
+  }
+
+  public boolean isAllowed(Principal principal, Permission permission, Resource resource,
       Object... context) {
     return avaliar(principal, permission, resource, context).permitido();
   }
@@ -32,7 +49,7 @@ public final class AccessResolver {
    * Como {@link #isAllowed}, mas devolve também qual cláusula decidiu e onde
    * ela estava. É o que sustenta a explicação de um 403.
    */
-  public static Decisao avaliar(Principal principal, Permission permission, Resource resource,
+  public Decisao avaliar(Principal principal, Permission permission, Resource resource,
       Object... context) {
     if (principal == null)
       return Decisao.negacaoPadrao("nenhum usuário autenticado");
@@ -46,7 +63,7 @@ public final class AccessResolver {
           permission + " não se aplica a um recurso do tipo " + resource.getType().name());
 
     // O contexto é montado uma vez e reaproveitado por todas as cláusulas.
-    var ctx = ContextResolver.padrao().resolver(principal, resource, context);
+    var ctx = contexto.resolver(principal, resource, context);
 
     var negacao = procurar(principal, permission, ctx, Effect.DENY);
     if (negacao != null)

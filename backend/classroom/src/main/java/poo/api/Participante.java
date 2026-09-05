@@ -2,7 +2,7 @@ package poo.api;
 
 import poo.classroom.Turma;
 import poo.classroom.iam.ClassroomConditions;
-import poo.iam.ContextResolver;
+import poo.classroom.iam.SecurityContext;
 import poo.iam.User;
 
 public class Participante {
@@ -23,7 +23,7 @@ public class Participante {
   public static boolean isParticipante(User user, Turma turma) {
     if (user == null || turma == null)
       return false;
-    var ctx = ContextResolver.padrao().resolver(user, turma);
+    var ctx = SecurityContext.getInstance().iam().contexto().resolver(user, turma);
     return ClassroomConditions.PARTICIPANTE.avaliar(ctx);
   }
 

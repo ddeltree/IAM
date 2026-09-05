@@ -21,19 +21,13 @@ import poo.iam.spi.AttributeProvider;
  */
 public final class ContextResolver {
 
-  private static final ContextResolver PADRAO = new ContextResolver();
-
   private final Map<ResourceType, AttributeProvider> provedores = new HashMap<>();
-
-  public static ContextResolver padrao() {
-    return PADRAO;
-  }
 
   public void registrar(AttributeProvider provedor) {
     provedores.put(provedor.tipo(), provedor);
   }
 
-  /** Esquece os provedores. Existe para os testes reiniciarem o estado. */
+  /** Esquece os provedores registrados. */
   public void limpar() {
     provedores.clear();
   }

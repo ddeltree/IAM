@@ -1,31 +1,30 @@
 package poo.iam.condition;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Registro dos operadores conhecidos.
+ * Os operadores que o núcleo traz — o {@code StringEquals}, {@code Bool} e
+ * afins da AWS.
  *
- * É registro, e não um {@code switch}, para que acrescentar um operador seja
- * uma linha e não uma edição no avaliador nem no desserializador.
+ * São constantes porque são valores: um operador é uma função de comparação,
+ * imutável e sem estado. Quem resolve <em>nome</em> para operador, e quem
+ * aceita operadores novos de uma aplicação, é o {@link OperatorRegistry} — que
+ * é instância justamente para não virar mapa global disputado.
  */
 public final class Operadores {
-
-  private static final Map<String, ConditionOperator> REGISTRO = new LinkedHashMap<>();
 
   /** Prefixo de conjunto da AWS: basta um valor do contexto casar. */
   public static final String PARA_ALGUM_VALOR = "ParaAlgumValor:";
 
-  public static final ConditionOperator IGUAL = registrar(
+  public static final ConditionOperator IGUAL = criar(
       "Igual", (contexto, politica) -> primeiro(contexto) != null
           && politica.contains(primeiro(contexto)));
 
-  public static final ConditionOperator DIFERENTE = registrar(
+  public static final ConditionOperator DIFERENTE = criar(
       "Diferente", (contexto, politica) -> !politica.contains(primeiro(contexto)));
 
   /** Comparação com curinga {@code *} e {@code ?}, como o StringLike. */
-  public static final ConditionOperator PARECIDO = registrar(
+  public static final ConditionOperator PARECIDO = criar(
       "Parecido", (contexto, politica) -> {
         var valor = primeiro(contexto);
         if (valor == null)
@@ -33,7 +32,7 @@ public final class Operadores {
         return politica.stream().anyMatch(padrao -> casaComCuringa(valor, padrao));
       });
 
-  public static final ConditionOperator BOOLEANO = registrar(
+  public static final ConditionOperator BOOLEANO = criar(
       "Booleano", (contexto, politica) -> {
         var valor = primeiro(contexto);
         return valor != null && politica.contains(valor);
@@ -43,7 +42,7 @@ public final class Operadores {
    * A chave está ausente? É assim que se expressa uma ação sem alvo, como
    * criar uma turma: {@code Nulo { "recurso:id": "true" }}.
    */
-  public static final ConditionOperator NULO = registrar(
+  public static final ConditionOperator NULO = criar(
       "Nulo", (contexto, politica) -> {
         var ausente = contexto.isEmpty();
         return politica.contains(String.valueOf(ausente));
@@ -52,8 +51,8 @@ public final class Operadores {
   private Operadores() {
   }
 
-  private static ConditionOperator registrar(String nome, Comparacao comparacao) {
-    var operador = new ConditionOperator() {
+  private static ConditionOperator criar(String nome, Comparacao comparacao) {
+    return new ConditionOperator() {
       @Override
       public String name() {
         return nome;
@@ -69,28 +68,6 @@ public final class Operadores {
         return nome;
       }
     };
-    REGISTRO.put(nome, operador);
-    return operador;
-  }
-
-  public static void registrar(ConditionOperator operador) {
-    REGISTRO.put(operador.name(), operador);
-  }
-
-  /**
-   * Resolve o nome, entendendo o prefixo de conjunto. {@code ParaAlgumValor:}
-   * é um decorador sobre um operador base, como na AWS — e não um operador
-   * separado para cada combinação.
-   */
-  public static ConditionOperator get(String nome) {
-    if (nome.startsWith(PARA_ALGUM_VALOR)) {
-      var base = get(nome.substring(PARA_ALGUM_VALOR.length()));
-      return paraAlgumValor(base);
-    }
-    var operador = REGISTRO.get(nome);
-    if (operador == null)
-      throw new IllegalArgumentException("Operador desconhecido: " + nome);
-    return operador;
   }
 
   /** Aplica o operador valor a valor: basta um do contexto passar. */
