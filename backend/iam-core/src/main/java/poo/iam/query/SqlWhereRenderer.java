@@ -64,6 +64,18 @@ public final class SqlWhereRenderer implements ConstraintVisitor<String> {
   }
 
   @Override
+  public String visitarIdEm(ResourceConstraint.IdEm idEm) {
+    if (idEm.getIds().isEmpty())
+      return "1=0";
+    var lista = idEm.getIds().stream()
+        .map(id -> "'" + id.replace("'", "''") + "'")
+        .collect(Collectors.joining(", "));
+    // a coluna do id é a única que o núcleo pode nomear sozinho: o mapeamento
+    // traduz atributos do domínio, e "id" é do próprio modelo de recurso
+    return "id IN (" + lista + ")";
+  }
+
+  @Override
   public String visitarTodas(Todas todas) {
     return juntar(todas.getPartes().stream().map(p -> p.accept(this)).toList(), " AND ");
   }

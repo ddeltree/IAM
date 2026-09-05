@@ -6,6 +6,7 @@ import poo.iam.query.PolicyQuery;
 import poo.iam.spi.ActionCatalog;
 import poo.iam.spi.AttributeProvider;
 import poo.iam.spi.PrincipalDirectory;
+import poo.iam.spi.ResourcePolicyProvider;
 
 /**
  * Monta um {@link Iam} a partir do que a aplicação fornece.
@@ -30,6 +31,7 @@ public final class IamFactory {
   private OperatorRegistry operadores = OperatorRegistry.padrao();
   private PrincipalDirectory diretorio;
   private ActionCatalog catalogo;
+  private ResourcePolicyProvider politicasDeRecurso;
 
   private IamFactory() {
   }
@@ -65,6 +67,15 @@ public final class IamFactory {
     return this;
   }
 
+  /**
+   * As políticas anexadas aos próprios recursos — a bucket policy da AWS.
+   * Sem isto, só a política de identidade decide.
+   */
+  public IamFactory politicasDeRecurso(ResourcePolicyProvider provedor) {
+    this.politicasDeRecurso = provedor;
+    return this;
+  }
+
   /** Um operador de condição que o núcleo não traz. */
   public IamFactory operador(ConditionOperator operador) {
     if (operadores == OperatorRegistry.padrao())
@@ -74,8 +85,9 @@ public final class IamFactory {
   }
 
   public Iam construir() {
-    var motor = new AuthorizationEngine(contexto);
-    var consultas = diretorio == null ? null : new PolicyQuery(diretorio, motor);
+    var motor = new AuthorizationEngine(contexto, politicasDeRecurso);
+    var consultas = diretorio == null ? null
+        : new PolicyQuery(diretorio, motor, politicasDeRecurso);
     var efetivas = catalogo == null ? null : new EffectivePermissions(motor, catalogo);
     return new Iam(motor, consultas, efetivas, operadores);
   }

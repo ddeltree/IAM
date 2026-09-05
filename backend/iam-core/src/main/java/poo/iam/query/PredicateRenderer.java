@@ -82,6 +82,11 @@ public final class PredicateRenderer implements ConstraintVisitor<Predicate<Reso
   }
 
   @Override
+  public Predicate<Resource> visitarIdEm(ResourceConstraint.IdEm idEm) {
+    return recurso -> idEm.getIds().contains(recurso.getId());
+  }
+
+  @Override
   public Predicate<Resource> visitarTodas(Todas todas) {
     return recurso -> todas.getPartes().stream().allMatch(p -> p.accept(this).test(recurso));
   }

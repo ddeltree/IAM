@@ -11,6 +11,7 @@ import poo.iam.Effect;
 import poo.iam.Group;
 import poo.iam.Permission;
 import poo.iam.spi.PrincipalDirectory;
+import poo.iam.spi.ResourcePolicyProvider;
 import poo.iam.RequestContext;
 import poo.iam.Resource;
 import poo.iam.Statement;
@@ -31,10 +32,17 @@ public final class PolicyQuery {
 
   private final PrincipalDirectory diretorio;
   private final AuthorizationEngine motor;
+  private final ResourcePolicyProvider politicasDeRecurso;
 
   public PolicyQuery(PrincipalDirectory diretorio, AuthorizationEngine motor) {
+    this(diretorio, motor, null);
+  }
+
+  public PolicyQuery(PrincipalDirectory diretorio, AuthorizationEngine motor,
+      ResourcePolicyProvider politicasDeRecurso) {
     this.diretorio = diretorio;
     this.motor = motor;
+    this.politicasDeRecurso = politicasDeRecurso;
   }
 
   /** O resultado, com o rastro de quanto trabalho foi evitado. */
@@ -105,6 +113,24 @@ public final class PolicyQuery {
         candidatos.add(user);
     }
 
+    // a política anexada ao próprio recurso também concede, e aqui ela é barata
+    // de considerar: o recurso está fixo, então basta ler as cláusulas dele
+    if (politicasDeRecurso != null && recurso != null) {
+      var doRecursoPolicy = politicasDeRecurso.politicaDe(recurso);
+      if (doRecursoPolicy != null) {
+        for (Statement statement : concessoes(doRecursoPolicy.getStatements(), permissao)) {
+          if (!statement.getResource().casa(recurso))
+            continue;
+          var restricao = PrincipalConstraintExtractor.extrair(statement.getCondition(), doRecurso);
+          if (restricao.irrestrita())
+            candidatos.addAll(diretorio.usuarios());
+          else
+            adicionarPorId(candidatos, new LinkedHashSet<>(diretorio.usuarios()),
+                restricao.getIds());
+        }
+      }
+    }
+
     return new ArrayList<>(candidatos);
   }
 
@@ -126,10 +152,43 @@ public final class PolicyQuery {
         partes.add(restricaoDe(statement, doPrincipal));
     }
 
+    var compartilhados = compartilhadosCom(principal, permissao);
+    if (compartilhados != null)
+      partes.add(compartilhados);
+
     if (partes.isEmpty())
       return ResourceConstraint.Nada.INSTANCIA;
     // as concessões se somam: alcança o que qualquer uma delas alcançar
     return partes.size() == 1 ? partes.get(0) : new ResourceConstraint.Alguma(partes);
+  }
+
+  /**
+   * Os recursos que concedem a este principal pela política deles.
+   *
+   * Aqui não há filtro a derivar: uma concessão que mora no recurso não é uma
+   * regra sobre atributos, é uma lista. Por isso a única resposta possível é
+   * perguntar ao provedor quais recursos têm política própria e testar cada
+   * um — e por isso a enumeração precisou entrar no spi. Devolve {@code null}
+   * quando não há nada a acrescentar.
+   */
+  private ResourceConstraint compartilhadosCom(User principal, Permission permissao) {
+    if (politicasDeRecurso == null)
+      return null;
+
+    var ids = new LinkedHashSet<String>();
+    for (Resource recurso : politicasDeRecurso.comPoliticaPropria(permissao.getResourceType())) {
+      var policy = politicasDeRecurso.politicaDe(recurso);
+      if (policy == null)
+        continue;
+      var ctx = motor.getContexto().resolver(principal, recurso);
+      for (Statement statement : concessoes(policy.getStatements(), permissao)) {
+        if (statement.getResource().casa(recurso) && statement.getCondition().avaliar(ctx)) {
+          ids.add(recurso.getId());
+          break;
+        }
+      }
+    }
+    return ids.isEmpty() ? null : new ResourceConstraint.IdEm(ids);
   }
 
   /**
@@ -175,7 +234,7 @@ public final class PolicyQuery {
         .toList();
   }
 
-  private static void adicionarPorId(Set<User> destino, Set<User> membros, Set<String> ids) {
+  private static void adicionarPorId(Set<User> destino, Collection<User> membros, Set<String> ids) {
     for (User membro : membros)
       if (ids.contains(membro.getId()))
         destino.add(membro);

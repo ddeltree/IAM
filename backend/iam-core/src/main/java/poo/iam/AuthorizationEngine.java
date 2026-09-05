@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
 
+import poo.iam.spi.ResourcePolicyProvider;
+
 /**
  * O motor de decisão do núcleo.
  *
@@ -30,9 +32,15 @@ public final class AuthorizationEngine {
   private static final String INLINE = "inline";
 
   private final ContextResolver contexto;
+  private final ResourcePolicyProvider politicasDeRecurso;
 
   public AuthorizationEngine(ContextResolver contexto) {
+    this(contexto, null);
+  }
+
+  public AuthorizationEngine(ContextResolver contexto, ResourcePolicyProvider politicasDeRecurso) {
     this.contexto = contexto == null ? new ContextResolver() : contexto;
+    this.politicasDeRecurso = politicasDeRecurso;
   }
 
   /** Como o núcleo lê os atributos dos recursos desta aplicação. */
@@ -78,11 +86,12 @@ public final class AuthorizationEngine {
     // O contexto é montado uma vez e reaproveitado por todas as cláusulas.
     var ctx = contexto.resolver(principal, resource, chavesDaRequisicao);
 
-    var negacao = procurar(principal, permission, ctx, Effect.DENY);
+    // negação explícita vence, venha da identidade ou do recurso
+    var negacao = procurar(principal, resource, permission, ctx, Effect.DENY);
     if (negacao != null)
       return Decisao.negacaoExplicita(negacao.statement, negacao.origem);
 
-    var concessao = procurar(principal, permission, ctx, Effect.ALLOW);
+    var concessao = procurar(principal, resource, permission, ctx, Effect.ALLOW);
     if (concessao != null)
       return Decisao.permitido(concessao.statement, concessao.origem);
 
@@ -94,12 +103,36 @@ public final class AuthorizationEngine {
    * A primeira cláusula do efeito pedido que se aplique, procurando no
    * principal e depois em quem ele herda, sempre na mesma ordem.
    */
-  private static Achado procurar(Principal raiz, Permission permission, RequestContext ctx,
-      Effect efeito) {
+  private Achado procurar(Principal raiz, Resource resource, Permission permission,
+      RequestContext ctx, Effect efeito) {
     // por identidade, e não por id: um usuário e um grupo podem ter ids iguais
     // sem serem o mesmo principal
     Set<Principal> visitados = Collections.newSetFromMap(new IdentityHashMap<>());
-    return procurar(raiz, raiz, permission, ctx, efeito, visitados);
+    var naIdentidade = procurar(raiz, raiz, permission, ctx, efeito, visitados);
+    if (naIdentidade != null)
+      return naIdentidade;
+    return noRecurso(resource, permission, ctx, efeito);
+  }
+
+  /**
+   * A política anexada ao próprio recurso, avaliada junto com a de identidade.
+   *
+   * Quem ela alcança está dito nas condições dela, sobre {@code principal:*} —
+   * não há campo Principal no statement, e não precisa haver.
+   */
+  private Achado noRecurso(Resource resource, Permission permission, RequestContext ctx,
+      Effect efeito) {
+    if (politicasDeRecurso == null || resource == null)
+      return null;
+    var policy = politicasDeRecurso.politicaDe(resource);
+    if (policy == null)
+      return null;
+
+    for (Statement statement : policy.getStatements()) {
+      if (statement.getEffect() == efeito && statement.aplica(permission, ctx))
+        return new Achado(statement, resource.getType().name() + "/" + resource.getId());
+    }
+    return null;
   }
 
   private static Achado procurar(Principal atual, Principal raiz, Permission permission,

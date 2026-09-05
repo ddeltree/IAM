@@ -152,6 +152,38 @@ public interface ResourceConstraint {
     }
   }
 
+  /**
+   * O recurso está nesta lista de ids.
+   *
+   * Vem das políticas anexadas aos próprios recursos, e é diferente em espécie
+   * dos outros nós: eles são regras sobre atributos, e este é uma enumeração.
+   * Não dá para derivá-lo de uma condição — foi preciso perguntar ao provedor
+   * quais recursos têm política própria. Sem ele, um recurso compartilhado
+   * sumiria da resposta de "sobre o que posso agir", que é o modo mais
+   * silencioso de perder consultabilidade.
+   */
+  final class IdEm implements ResourceConstraint {
+    private final java.util.Set<String> ids;
+
+    public IdEm(java.util.Collection<String> ids) {
+      this.ids = java.util.Set.copyOf(ids);
+    }
+
+    public java.util.Set<String> getIds() {
+      return ids;
+    }
+
+    @Override
+    public <R> R accept(ConstraintVisitor<R> v) {
+      return v.visitarIdEm(this);
+    }
+
+    @Override
+    public String toString() {
+      return "id em " + ids;
+    }
+  }
+
   final class Todas implements ResourceConstraint {
     private final List<ResourceConstraint> partes;
 
