@@ -1,16 +1,19 @@
 package poo.iam;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import poo.iam.condition.Condition;
-import java.util.stream.Collectors;
 
 /**
  * A política de um {@link User} ou de um {@link Group}: um conjunto de
  * {@link Statement}s.
  *
- * Guarda concessões e negações lado a lado, sem uma apagar a outra — quem
- * resolve o conflito é o {@link AccessResolver}, aplicando "deny overrides".
+ * Guarda concessões e negações lado a lado, sem uma apagar a outra, e não
+ * decide nada — casar cláusula com pedido é do {@link AccessResolver}, que
+ * precisa fazer isso percorrendo vários principais de uma vez. Aqui só se
+ * guarda e se lê, o que é justamente o que {@link Principal} pede de quem
+ * implementa a interface por fora.
  */
 public class PermissionHolder {
   private final Set<Statement> statements = new LinkedHashSet<>();
@@ -58,35 +61,6 @@ public class PermissionHolder {
   public boolean allow(Permission permission) {
     return statements.removeIf(
         s -> s.getEffect() == Effect.DENY && s.falaSobre(permission));
-  }
-
-  /** Existe concessão aplicável a este pedido? */
-  public boolean permite(Permission permission, RequestContext ctx) {
-    return concessaoQueAplica(permission, ctx) != null;
-  }
-
-  /** Existe negação aplicável a este pedido? */
-  public boolean nega(Permission permission, RequestContext ctx) {
-    return negacaoQueAplica(permission, ctx) != null;
-  }
-
-  /** A concessão que atende o pedido, ou {@code null}. Nomeá-la é o que
-   *  permite explicar a decisão depois. */
-  public Statement concessaoQueAplica(Permission permission, RequestContext ctx) {
-    return primeira(Effect.ALLOW, permission, ctx);
-  }
-
-  /** A negação que barra o pedido, ou {@code null}. */
-  public Statement negacaoQueAplica(Permission permission, RequestContext ctx) {
-    return primeira(Effect.DENY, permission, ctx);
-  }
-
-  private Statement primeira(Effect efeito, Permission permission, RequestContext ctx) {
-    for (Statement statement : statements) {
-      if (statement.getEffect() == efeito && statement.aplica(permission, ctx))
-        return statement;
-    }
-    return null;
   }
 
   /** Ignora a condição: diz apenas que existe uma cláusula sobre a permissão. */

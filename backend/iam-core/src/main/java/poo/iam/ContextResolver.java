@@ -38,14 +38,14 @@ public final class ContextResolver {
     provedores.clear();
   }
 
-  public RequestContext resolver(User principal, Resource alvo, Object... extra) {
+  public RequestContext resolver(Principal principal, Resource alvo, Object... extra) {
     var valores = new LinkedHashMap<String, List<String>>();
 
     if (principal != null) {
       valores.put("principal:id", List.of(principal.getId()));
       if (principal.getName() != null)
         valores.put("principal:name", List.of(principal.getName()));
-      valores.put("principal:groups", nomesDosGrupos(principal));
+      valores.put("principal:groups", nomesDeQuemHerda(principal));
     }
 
     for (Resource atual = alvo; atual != null; atual = atual.getPai()) {
@@ -71,10 +71,15 @@ public final class ContextResolver {
     return provedor.atributosDe(recurso);
   }
 
-  private static List<String> nomesDosGrupos(User principal) {
+  /**
+   * Os nomes dos principais de quem este herda — para um usuário, os grupos
+   * dele. A chave continua se chamando {@code principal:groups} porque é assim
+   * que as políticas já escritas se referem a ela.
+   */
+  private static List<String> nomesDeQuemHerda(Principal principal) {
     var nomes = new ArrayList<String>();
-    for (Group grupo : principal.getGroups())
-      nomes.add(grupo.getName());
+    for (Principal herdado : principal.herdaDe())
+      nomes.add(herdado.getName());
     return nomes;
   }
 }

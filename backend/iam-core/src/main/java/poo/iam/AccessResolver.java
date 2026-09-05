@@ -1,11 +1,20 @@
 package poo.iam;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
+
 /**
- * O motor de decisão do núcleo — a única peça que sabe combinar política inline
- * com política de grupo.
+ * O motor de decisão do núcleo.
  *
  * Segue a mesma ordem da AWS: negação explícita vence qualquer concessão, e o
  * padrão, na ausência de ambas, é negar.
+ *
+ * A política de um principal não é só a dele: percorre-se o grafo de
+ * {@link Principal#herdaDe()} somando cláusulas. Isso costumava ser um caso
+ * especial escrito aqui dentro — "primeiro o inline, depois cada grupo" —, e
+ * virar travessia genérica é o que permite grupos, papéis e sessões usarem o
+ * mesmo algoritmo em vez de cada um ganhar um ramo no avaliador.
  */
 public final class AccessResolver {
 
@@ -14,16 +23,18 @@ public final class AccessResolver {
   private AccessResolver() {
   }
 
-  public static boolean isAllowed(User user, Permission permission, Resource resource, Object... context) {
-    return avaliar(user, permission, resource, context).permitido();
+  public static boolean isAllowed(Principal principal, Permission permission, Resource resource,
+      Object... context) {
+    return avaliar(principal, permission, resource, context).permitido();
   }
 
   /**
    * Como {@link #isAllowed}, mas devolve também qual cláusula decidiu e onde
    * ela estava. É o que sustenta a explicação de um 403.
    */
-  public static Decisao avaliar(User user, Permission permission, Resource resource, Object... context) {
-    if (user == null)
+  public static Decisao avaliar(Principal principal, Permission permission, Resource resource,
+      Object... context) {
+    if (principal == null)
       return Decisao.negacaoPadrao("nenhum usuário autenticado");
 
     // Sem esta conferência uma concessão sem condição alcançaria qualquer
@@ -35,34 +46,47 @@ public final class AccessResolver {
           permission + " não se aplica a um recurso do tipo " + resource.getType().name());
 
     // O contexto é montado uma vez e reaproveitado por todas as cláusulas.
-    var ctx = ContextResolver.padrao().resolver(user, resource, context);
+    var ctx = ContextResolver.padrao().resolver(principal, resource, context);
 
-    var negacao = procurar(user, permission, ctx, true);
+    var negacao = procurar(principal, permission, ctx, Effect.DENY);
     if (negacao != null)
       return Decisao.negacaoExplicita(negacao.statement, negacao.origem);
 
-    var concessao = procurar(user, permission, ctx, false);
+    var concessao = procurar(principal, permission, ctx, Effect.ALLOW);
     if (concessao != null)
       return Decisao.permitido(concessao.statement, concessao.origem);
 
     return Decisao.negacaoPadrao(
-        "nenhuma cláusula concede " + permission + " a " + user.getName());
+        "nenhuma cláusula concede " + permission + " a " + principal.getName());
   }
 
-  /** Varre a política inline e depois a de cada grupo, na mesma ordem sempre. */
-  private static Achado procurar(User user, Permission permission, RequestContext ctx, boolean negacao) {
-    var inline = negacao
-        ? user.getPolicy().negacaoQueAplica(permission, ctx)
-        : user.getPolicy().concessaoQueAplica(permission, ctx);
-    if (inline != null)
-      return new Achado(inline, INLINE);
+  /**
+   * A primeira cláusula do efeito pedido que se aplique, procurando no
+   * principal e depois em quem ele herda, sempre na mesma ordem.
+   */
+  private static Achado procurar(Principal raiz, Permission permission, RequestContext ctx,
+      Effect efeito) {
+    // por identidade, e não por id: um usuário e um grupo podem ter ids iguais
+    // sem serem o mesmo principal
+    Set<Principal> visitados = Collections.newSetFromMap(new IdentityHashMap<>());
+    return procurar(raiz, raiz, permission, ctx, efeito, visitados);
+  }
 
-    for (Group group : user.getGroups()) {
-      var doGrupo = negacao
-          ? group.getPolicy().negacaoQueAplica(permission, ctx)
-          : group.getPolicy().concessaoQueAplica(permission, ctx);
-      if (doGrupo != null)
-        return new Achado(doGrupo, group.getName());
+  private static Achado procurar(Principal atual, Principal raiz, Permission permission,
+      RequestContext ctx, Effect efeito, Set<Principal> visitados) {
+    // o grafo pode ter ciclo; sem isto, um grupo que herda de si mesmo trava
+    if (!visitados.add(atual))
+      return null;
+
+    for (Statement statement : atual.getStatements()) {
+      if (statement.getEffect() == efeito && statement.aplica(permission, ctx))
+        return new Achado(statement, atual == raiz ? INLINE : atual.getName());
+    }
+
+    for (Principal herdado : atual.herdaDe()) {
+      var achado = procurar(herdado, raiz, permission, ctx, efeito, visitados);
+      if (achado != null)
+        return achado;
     }
     return null;
   }

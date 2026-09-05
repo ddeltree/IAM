@@ -4,7 +4,7 @@ import java.util.*;
 
 import poo.iam.condition.Condition;
 
-public class User implements Resource {
+public class User implements Principal, Resource {
   private static long proximoId = 1; // contador global
   protected final String id = String.valueOf(proximoId++);
   private String name;
@@ -66,6 +66,7 @@ public class User implements Resource {
   }
 
   /** As cláusulas inline, para inspeção — é o que permite imprimir a política. */
+  @Override
   public Set<Statement> getStatements() {
     return policy.getStatements();
   }
@@ -103,6 +104,15 @@ public class User implements Resource {
    */
   public Set<Group> getGroups() {
     return Collections.unmodifiableSet(groups);
+  }
+
+  /**
+   * As políticas dos grupos também valem para o usuário. Para o motor isto é
+   * só "de quem eu herdo": ele não sabe que são grupos.
+   */
+  @Override
+  public Collection<Group> herdaDe() {
+    return getGroups();
   }
 
   // GETTERS

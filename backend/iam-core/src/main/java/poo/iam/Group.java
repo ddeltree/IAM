@@ -4,13 +4,35 @@ import java.util.*;
 
 import poo.iam.condition.Condition;
 
-public class Group {
+public class Group implements Principal, Resource {
+  private final String id;
   private final String name;
   private final Set<User> users = new HashSet<>();
   private final PermissionHolder policy = new PermissionHolder(); // composition
 
   public Group(String name) {
+    this(name, name);
+  }
+
+  /**
+   * O nome é o identificador natural de um grupo — como na AWS, onde o nome é
+   * único na conta e o ARN é montado a partir dele. Este construtor existe para
+   * a aplicação que já tem um id próprio a informar.
+   */
+  public Group(String id, String name) {
+    this.id = id;
     this.name = name;
+  }
+
+  @Override
+  public String getId() {
+    return id;
+  }
+
+  /** Grupos são gerenciados pelo IAM, então são recursos dele. */
+  @Override
+  public ResourceType getType() {
+    return PrincipalResource.GRUPO;
   }
 
   protected void addUser(User user) {
@@ -90,6 +112,7 @@ public class Group {
   }
 
   /** As cláusulas do grupo, para inspeção. */
+  @Override
   public Set<Statement> getStatements() {
     return policy.getStatements();
   }
