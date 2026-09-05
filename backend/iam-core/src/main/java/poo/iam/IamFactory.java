@@ -3,6 +3,7 @@ package poo.iam;
 import poo.iam.condition.ConditionOperator;
 import poo.iam.condition.OperatorRegistry;
 import poo.iam.query.PolicyQuery;
+import poo.iam.spi.ActionCatalog;
 import poo.iam.spi.AttributeProvider;
 import poo.iam.spi.PrincipalDirectory;
 
@@ -28,6 +29,7 @@ public final class IamFactory {
   private final ContextResolver contexto = new ContextResolver();
   private OperatorRegistry operadores = OperatorRegistry.padrao();
   private PrincipalDirectory diretorio;
+  private ActionCatalog catalogo;
 
   private IamFactory() {
   }
@@ -53,6 +55,16 @@ public final class IamFactory {
     return this;
   }
 
+  /**
+   * O que existe para ser pedido. Sem isto o motor decide normalmente, mas
+   * {@link Iam#efetivas()} vem {@code null}: enumerar o que alguém pode exige
+   * uma lista do que há, e uma cláusula com curinga não se expande sem ela.
+   */
+  public IamFactory catalogo(ActionCatalog catalogo) {
+    this.catalogo = catalogo;
+    return this;
+  }
+
   /** Um operador de condição que o núcleo não traz. */
   public IamFactory operador(ConditionOperator operador) {
     if (operadores == OperatorRegistry.padrao())
@@ -64,6 +76,7 @@ public final class IamFactory {
   public Iam construir() {
     var motor = new AuthorizationEngine(contexto);
     var consultas = diretorio == null ? null : new PolicyQuery(diretorio, motor);
-    return new Iam(motor, consultas, operadores);
+    var efetivas = catalogo == null ? null : new EffectivePermissions(motor, catalogo);
+    return new Iam(motor, consultas, efetivas, operadores);
   }
 }

@@ -79,6 +79,7 @@ public class SecurityContext {
   private static Iam montarIam() {
     return IamFactory.novo()
         .atributos(ClassroomAttributes.todos())
+        .catalogo(ClassroomPermission.CATALOGO)
         .construir();
   }
 

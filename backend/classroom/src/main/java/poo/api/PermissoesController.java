@@ -7,7 +7,6 @@ import java.util.Map;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import poo.classroom.iam.ClassroomResource;
-import poo.classroom.iam.PermissoesEfetivas;
 import poo.classroom.iam.SecurityContext;
 import poo.classroom.iam.ClassroomPermission;
 import poo.iam.Decisao;
@@ -51,6 +50,10 @@ public class PermissoesController {
    * usuários estão guardados é esta camada — o módulo de autorização não deve
    * conhecer um controller.
    */
+  private static poo.iam.EffectivePermissions efetivas() {
+    return poo.classroom.iam.SecurityContext.getInstance().iam().efetivas();
+  }
+
   private static PolicyQuery consultas() {
     return new PolicyQuery(DIRETORIO,
         poo.classroom.iam.SecurityContext.getInstance().iam().motor());
@@ -153,8 +156,8 @@ public class PermissoesController {
     var resposta = new LinkedHashMap<String, Object>();
     resposta.put("principal", principal(user));
     resposta.put("global", explicar
-        ? explicado(PermissoesEfetivas.globaisExplicadas(user))
-        : PermissoesEfetivas.globais(user));
+        ? explicado(efetivas().globaisExplicadas(user))
+        : efetivas().globais(user));
 
     var recursos = new LinkedHashMap<String, Object>();
     for (String ref : ctx.queryParams("recurso")) {
@@ -166,8 +169,8 @@ public class PermissoesController {
         continue;
       }
       recursos.put(ref, explicar
-          ? explicado(PermissoesEfetivas.explicadas(user, recurso))
-          : PermissoesEfetivas.sobre(user, recurso));
+          ? explicado(efetivas().explicadas(user, recurso))
+          : efetivas().sobre(user, recurso));
     }
     resposta.put("recursos", recursos);
 

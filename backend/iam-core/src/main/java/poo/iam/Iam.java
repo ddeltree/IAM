@@ -17,11 +17,14 @@ public final class Iam {
 
   private final AuthorizationEngine motor;
   private final PolicyQuery consultas;
+  private final EffectivePermissions efetivas;
   private final OperatorRegistry operadores;
 
-  Iam(AuthorizationEngine motor, PolicyQuery consultas, OperatorRegistry operadores) {
+  Iam(AuthorizationEngine motor, PolicyQuery consultas, EffectivePermissions efetivas,
+      OperatorRegistry operadores) {
     this.motor = motor;
     this.consultas = consultas;
+    this.efetivas = efetivas;
     this.operadores = operadores;
   }
 
@@ -38,6 +41,16 @@ public final class Iam {
    */
   public PolicyQuery consultas() {
     return consultas;
+  }
+
+  /**
+   * "O que este principal pode fazer aqui?", em lote.
+   *
+   * {@code null} quando nenhum {@link poo.iam.spi.ActionCatalog} foi fornecido
+   * — sem saber o que existe, não há o que enumerar.
+   */
+  public EffectivePermissions efetivas() {
+    return efetivas;
   }
 
   public ContextResolver contexto() {

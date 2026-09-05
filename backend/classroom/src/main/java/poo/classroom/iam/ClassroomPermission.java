@@ -3,6 +3,9 @@ package poo.classroom.iam;
 import static poo.classroom.iam.ClassroomAction.*;
 import static poo.classroom.iam.ClassroomResource.*;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 import poo.iam.Action;
 import poo.iam.Decisao;
 import poo.iam.Permission;
@@ -10,6 +13,7 @@ import poo.iam.PrincipalResource;
 import poo.iam.Resource;
 import poo.iam.ResourceType;
 import poo.iam.User;
+import poo.iam.spi.ActionCatalog;
 
 /**
  * Catálogo das permissões desta aplicação: o par (ação, tipo de recurso) que os
@@ -61,6 +65,28 @@ public enum ClassroomPermission {
     GLOBAL,
     RECURSO,
   }
+
+  /**
+   * O catálogo desta aplicação, para o núcleo saber o que existe.
+   *
+   * É o que permite responder "o que este usuário pode fazer aqui?" mesmo
+   * quando a política foi escrita com curinga: sem uma lista do que há,
+   * {@code allow("*", "*")} não se expande em resposta nenhuma.
+   */
+  public static final ActionCatalog CATALOGO = new ActionCatalog() {
+    @Override
+    public Collection<Permission> todas() {
+      return Arrays.stream(values()).map(ClassroomPermission::get).toList();
+    }
+
+    @Override
+    public Collection<Permission> semAlvo() {
+      return Arrays.stream(values())
+          .filter(p -> p.getEscopo() == Escopo.GLOBAL)
+          .map(ClassroomPermission::get)
+          .toList();
+    }
+  };
 
   private final Permission permission;
   private final Escopo escopo;
