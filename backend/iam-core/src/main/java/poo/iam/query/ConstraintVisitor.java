@@ -1,6 +1,7 @@
 package poo.iam.query;
 
 import poo.iam.query.ResourceConstraint.Alguma;
+import poo.iam.query.ResourceConstraint.AtributoCompara;
 import poo.iam.query.ResourceConstraint.AtributoContem;
 import poo.iam.query.ResourceConstraint.AtributoIgual;
 import poo.iam.query.ResourceConstraint.Nada;
@@ -20,6 +21,8 @@ public interface ConstraintVisitor<R> {
   R visitarIgual(AtributoIgual igual);
 
   R visitarContem(AtributoContem contem);
+
+  R visitarCompara(AtributoCompara compara);
 
   R visitarTodas(Todas todas);
 

@@ -62,7 +62,32 @@ public final class ResourceConstraintExtractor implements ConditionVisitor<Resou
       return new ResourceConstraint.AtributoIgual(chave, valor);
     if (operador.equals(Operadores.PARA_ALGUM_VALOR + Operadores.IGUAL.name()))
       return new ResourceConstraint.AtributoContem(chave, valor);
+
+    // as comparações de ordem, que sem este ramo virariam Tudo — correto, mas
+    // inútil: o banco varreria a tabela para o motor descartar depois
+    var simbolo = simboloDe(operador);
+    if (simbolo != null)
+      return new ResourceConstraint.AtributoCompara(chave, simbolo, valor);
+
     return ResourceConstraint.Tudo.INSTANCIA;
+  }
+
+  /**
+   * O símbolo do operador de ordem, ou {@code null} se não for um.
+   *
+   * Números e datas compartilham os quatro símbolos: quem sabe distinguir
+   * "maior que 9" de "depois das 8h" é quem compara os valores, não o filtro.
+   */
+  private static String simboloDe(String operador) {
+    if (operador.equals(Operadores.MAIOR.name()) || operador.equals(Operadores.DATA_DEPOIS.name()))
+      return ">";
+    if (operador.equals(Operadores.MAIOR_OU_IGUAL.name()))
+      return ">=";
+    if (operador.equals(Operadores.MENOR.name()) || operador.equals(Operadores.DATA_ANTES.name()))
+      return "<";
+    if (operador.equals(Operadores.MENOR_OU_IGUAL.name()))
+      return "<=";
+    return null;
   }
 
   /** Resolve o valor esperado, expandindo a variável de política. */

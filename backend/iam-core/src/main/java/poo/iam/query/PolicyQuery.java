@@ -11,6 +11,7 @@ import poo.iam.Effect;
 import poo.iam.Group;
 import poo.iam.Permission;
 import poo.iam.spi.PrincipalDirectory;
+import poo.iam.RequestContext;
 import poo.iam.Resource;
 import poo.iam.Statement;
 import poo.iam.User;
@@ -83,6 +84,10 @@ public final class PolicyQuery {
 
     for (Group grupo : diretorio.grupos()) {
       for (Statement statement : concessoes(grupo.getStatements(), permissao)) {
+        // uma cláusula que mira TURMA/3 não candidata ninguém para a turma 9,
+        // e isso se decide sem avaliar condição nenhuma
+        if (!statement.getResource().casa(recurso))
+          continue;
         var restricao = PrincipalConstraintExtractor.extrair(statement.getCondition(), doRecurso);
         if (restricao.irrestrita())
           candidatos.addAll(grupo.getUsers());
@@ -94,7 +99,9 @@ public final class PolicyQuery {
     // concessões inline não estão indexadas por parte nenhuma: percorrer os
     // usuários é inevitável, mas basta olhar as cláusulas, sem avaliar condição
     for (User user : diretorio.usuarios()) {
-      if (!concessoes(user.getStatements(), permissao).isEmpty())
+      var alcancam = concessoes(user.getStatements(), permissao).stream()
+          .anyMatch(s -> s.getResource().casa(recurso));
+      if (alcancam)
         candidatos.add(user);
     }
 
@@ -110,13 +117,13 @@ public final class PolicyQuery {
     var partes = new ArrayList<ResourceConstraint>();
 
     for (Statement statement : concessoes(principal.getStatements(), permissao))
-      partes.add(ResourceConstraintExtractor.extrair(statement.getCondition(), doPrincipal));
+      partes.add(restricaoDe(statement, doPrincipal));
 
     for (Group grupo : diretorio.grupos()) {
       if (!grupo.getUsers().contains(principal))
         continue;
       for (Statement statement : concessoes(grupo.getStatements(), permissao))
-        partes.add(ResourceConstraintExtractor.extrair(statement.getCondition(), doPrincipal));
+        partes.add(restricaoDe(statement, doPrincipal));
     }
 
     if (partes.isEmpty())
@@ -136,6 +143,30 @@ public final class PolicyQuery {
         .filter(filtro)
         .filter(r -> motor.isAllowed(principal, permissao, r))
         .toList();
+  }
+
+  /**
+   * O que uma cláusula alcança: a condição dela, mais o recurso que ela mira.
+   *
+   * O padrão de recurso é a metade que a condição não tem. Uma cláusula sobre
+   * {@code TURMA/3} restringe a uma turma sem escrever condição nenhuma, e
+   * ignorá-la aqui não daria resposta errada — daria o filtro dizendo "todas as
+   * turmas" e o motor recusando uma por uma depois. Foi para isto que o
+   * elemento entrou no {@link Statement}.
+   */
+  private static ResourceConstraint restricaoDe(Statement statement, RequestContext doPrincipal) {
+    var daCondicao = ResourceConstraintExtractor.extrair(statement.getCondition(), doPrincipal);
+    if (!statement.getResource().idExato())
+      return daCondicao;
+
+    var doPadrao = new ResourceConstraint.AtributoIgual("recurso:id",
+        statement.getResource().getId());
+    if (daCondicao instanceof ResourceConstraint.Nada)
+      return daCondicao;
+    if (daCondicao instanceof ResourceConstraint.Tudo)
+      return doPadrao;
+    // as duas precisam valer: a cláusula mira aquele recurso E sob aquela condição
+    return new ResourceConstraint.Todas(List.of(doPadrao, daCondicao));
   }
 
   private static List<Statement> concessoes(Set<Statement> statements, Permission permissao) {

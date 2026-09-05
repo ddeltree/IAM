@@ -107,6 +107,51 @@ public interface ResourceConstraint {
     }
   }
 
+  /**
+   * O atributo comparado por ordem — {@code >}, {@code >=}, {@code <},
+   * {@code <=} — para as condições numéricas e de tempo.
+   *
+   * Sem este nó, uma condição como "a atividade ainda não venceu" cairia em
+   * {@link Tudo} na extração: correto, porque um superconjunto nunca esconde
+   * nada, mas inútil — o filtro não filtraria e o banco varreria a tabela
+   * inteira para o motor descartar depois. Operador novo sem nó de restrição
+   * correspondente é expressividade comprada com consultabilidade.
+   */
+  final class AtributoCompara implements ResourceConstraint {
+    /** O símbolo, já em forma comparável: {@code >}, {@code >=}, {@code <}, {@code <=}. */
+    private final String operador;
+    private final String chave;
+    private final String valor;
+
+    public AtributoCompara(String chave, String operador, String valor) {
+      this.chave = chave;
+      this.operador = operador;
+      this.valor = valor;
+    }
+
+    public String getChave() {
+      return chave;
+    }
+
+    public String getOperador() {
+      return operador;
+    }
+
+    public String getValor() {
+      return valor;
+    }
+
+    @Override
+    public <R> R accept(ConstraintVisitor<R> v) {
+      return v.visitarCompara(this);
+    }
+
+    @Override
+    public String toString() {
+      return chave + " " + operador + " " + valor;
+    }
+  }
+
   final class Todas implements ResourceConstraint {
     private final List<ResourceConstraint> partes;
 

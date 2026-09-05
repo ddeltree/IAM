@@ -52,6 +52,36 @@ public final class PredicateRenderer implements ConstraintVisitor<Predicate<Reso
   }
 
   @Override
+  public Predicate<Resource> visitarCompara(ResourceConstraint.AtributoCompara compara) {
+    return recurso -> {
+      var doRecurso = valores(recurso, compara.getChave());
+      if (doRecurso.isEmpty())
+        return false;
+      var cmp = comparar(doRecurso.get(0), compara.getValor());
+      if (cmp == null)
+        // não sei comparar: deixo passar, e o motor decide. Filtro que exclui
+        // por não entender esconderia acesso legítimo
+        return true;
+      return switch (compara.getOperador()) {
+        case ">" -> cmp > 0;
+        case ">=" -> cmp >= 0;
+        case "<" -> cmp < 0;
+        case "<=" -> cmp <= 0;
+        default -> true;
+      };
+    };
+  }
+
+  /** Números como números; o resto, na ordem do texto (que serve ao ISO-8601). */
+  private static Integer comparar(String a, String b) {
+    try {
+      return Double.compare(Double.parseDouble(a), Double.parseDouble(b));
+    } catch (NumberFormatException naoEhNumero) {
+      return a.compareTo(b);
+    }
+  }
+
+  @Override
   public Predicate<Resource> visitarTodas(Todas todas) {
     return recurso -> todas.getPartes().stream().allMatch(p -> p.accept(this).test(recurso));
   }

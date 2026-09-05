@@ -15,4 +15,15 @@ public interface SqlMapping {
 
   /** Fragmento para "o atributo multivalorado contém". */
   String contem(String chave, String valor);
+
+  /**
+   * Fragmento para uma comparação de ordem, com o operador já em símbolo
+   * ({@code >}, {@code >=}, {@code <}, {@code <=}).
+   *
+   * O padrão devolve {@code null} — sem tradução, não filtra. Isso é sempre
+   * seguro: mais candidatos chegam ao motor, nunca menos.
+   */
+  default String compara(String chave, String operador, String valor) {
+    return null;
+  }
 }

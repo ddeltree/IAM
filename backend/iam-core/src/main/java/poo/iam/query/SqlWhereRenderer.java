@@ -57,6 +57,13 @@ public final class SqlWhereRenderer implements ConstraintVisitor<String> {
   }
 
   @Override
+  public String visitarCompara(ResourceConstraint.AtributoCompara compara) {
+    var fragmento = mapeamento.compara(
+        compara.getChave(), compara.getOperador(), compara.getValor());
+    return fragmento == null ? "1=1" : fragmento;
+  }
+
+  @Override
   public String visitarTodas(Todas todas) {
     return juntar(todas.getPartes().stream().map(p -> p.accept(this)).toList(), " AND ");
   }
