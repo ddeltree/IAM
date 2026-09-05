@@ -4,8 +4,6 @@ import java.util.*;
 
 import poo.iam.condition.Condition;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 public class User implements Resource {
   private static long proximoId = 1; // contador global
   protected final String id = String.valueOf(proximoId++);
@@ -68,17 +66,14 @@ public class User implements Resource {
   }
 
   /** As cláusulas inline, para inspeção — é o que permite imprimir a política. */
-  @JsonIgnore
   public Set<Statement> getStatements() {
     return policy.getStatements();
   }
 
-  @JsonIgnore
   public Set<Permission> getInlinePermissions() {
     return policy.getPermissions();
   }
 
-  @JsonIgnore
   public Set<Permission> getDeniedPermissions() {
     return policy.getDeniedPermissions();
   }
@@ -99,11 +94,13 @@ public class User implements Resource {
   }
 
   /**
-   * Grupos e permissões ficam fora do JSON: são detalhe interno da
-   * autorização e apareciam em toda resposta que embute um usuário (o autor de
-   * um post, por exemplo). Quem precisa do papel usa o DTO do UserController.
+   * Os grupos a que o usuário pertence.
+   *
+   * Isto e as permissões são detalhe interno da autorização e não pertencem a
+   * uma resposta HTTP — mas manter esse cuidado aqui obrigaria o núcleo a
+   * conhecer a biblioteca de serialização da aplicação. Quem os esconde é o
+   * mixin de quem serializa; quem precisa do papel usa o DTO do UserController.
    */
-  @JsonIgnore
   public Set<Group> getGroups() {
     return Collections.unmodifiableSet(groups);
   }

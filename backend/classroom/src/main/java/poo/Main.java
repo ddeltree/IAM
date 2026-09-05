@@ -1,8 +1,12 @@
 package poo;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.javalin.Javalin;
+import io.javalin.json.JavalinJackson;
 import poo.api.AtividadeController;
 import poo.api.ComentarioController;
+import poo.api.IamMixins;
 import poo.api.ParticipantesController;
 import poo.api.PermissoesController;
 import poo.api.PostController;
@@ -25,6 +29,10 @@ public class Main {
 
     public static Javalin createApp() {
         var app = Javalin.create(config -> {
+            // O núcleo não sabe o que é JSON; quem decide o que dele aparece
+            // numa resposta é esta aplicação, aqui.
+            config.jsonMapper(new JavalinJackson(IamMixins.aplicar(new ObjectMapper()), false));
+
             config.bundledPlugins.enableCors(cors -> {
                 cors.addRule(it -> {
                     it.anyHost(); // Habilita acesso de qualquer origem (CORS)

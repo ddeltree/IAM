@@ -2,8 +2,6 @@ package poo.iam;
 
 import java.util.*;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import poo.iam.condition.Condition;
 
 public class Group {
@@ -24,10 +22,12 @@ public class Group {
   }
 
   /**
-   * Os membros. Fica fora do JSON: serializar os dois lados faria Jackson
-   * entrar em recursão (usuário -> grupo -> usuário).
+   * Os membros.
+   *
+   * Serializar os dois lados desta relação faria qualquer mapeador entrar em
+   * recursão (usuário -> grupo -> usuário); evitar isso é responsabilidade de
+   * quem serializa, não do núcleo.
    */
-  @JsonIgnore
   public Set<User> getUsers() {
     return Collections.unmodifiableSet(users);
   }

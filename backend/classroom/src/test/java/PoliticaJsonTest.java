@@ -98,8 +98,10 @@ public class PoliticaJsonTest extends ApiFixture {
     var comparacoes = 0;
     for (Statement statement : todas) {
       var original = statement.getCondition();
-      var escrito = MAPPER.valueToTree(ConditionJson.escrever(original));
-      var relido = ConditionJson.ler(escrito.isNull() ? null : escrito);
+      // ida e volta por texto de verdade: o documento é serializado e
+      // reinterpretado, não apenas convertido de árvore para árvore
+      var texto = MAPPER.writeValueAsString(ConditionJson.escrever(original));
+      var relido = ConditionJson.ler(MAPPER.readValue(texto, Object.class));
 
       for (RequestContext ctx : contextos) {
         assertEquals(original.avaliar(ctx), relido.avaliar(ctx),

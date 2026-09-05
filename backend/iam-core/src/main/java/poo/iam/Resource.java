@@ -1,7 +1,5 @@
 package poo.iam;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 /** Qualquer objeto que possa ser alvo de uma permissão. */
 public interface Resource {
   ResourceType getType();
@@ -19,7 +17,6 @@ public interface Resource {
    * responsável" alcança a turma partindo de um comentário, sem que ninguém
    * precise escrever essa navegação à mão.
    */
-  @JsonIgnore
   default Resource getPai() {
     return null;
   }

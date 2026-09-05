@@ -5,15 +5,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 /**
- * Converte a árvore de condições de e para JSON, no formato do bloco
+ * Converte a árvore de condições de e para a forma documental do bloco
  * {@code Condition} da AWS:
  *
  * <pre>
  * { "Igual": { "turma:professorId": ["${principal:id}"] } }
  * </pre>
+ *
+ * A forma são {@link Map}s, {@link List}s e textos — não uma árvore de alguma
+ * biblioteca de JSON. É de propósito: assim o núcleo descreve o documento sem
+ * escolher com o que a aplicação vai serializá-lo, e {@link #ler} aceita
+ * exatamente o que {@link #escrever} produz. Quem transforma isso em texto é a
+ * aplicação, com o mapeador que ela já usa.
  *
  * A escrita é um {@link ConditionVisitor}; a leitura despacha pelo registro de
  * {@link Operadores}, então acrescentar um operador não mexe aqui.
@@ -28,19 +32,24 @@ public final class ConditionJson {
     return condicao.accept(new Escritor());
   }
 
-  public static Condition ler(JsonNode node) {
-    if (node == null || node.isNull())
+  /** Lê o que {@link #escrever} produziu: {@code Map}, {@code List} e texto. */
+  public static Condition ler(Object node) {
+    if (node == null)
       return Condition.SEMPRE;
+    if (!(node instanceof Map))
+      throw new IllegalArgumentException(
+          "Uma condição é um objeto de operadores, e veio " + node.getClass().getSimpleName());
 
-    var campos = node.fieldNames();
     var partes = new ArrayList<Condition>();
-    while (campos.hasNext()) {
-      var nome = campos.next();
-      var valor = node.get(nome);
+    for (var entrada : ((Map<?, ?>) node).entrySet()) {
+      var nome = String.valueOf(entrada.getKey());
+      var valor = entrada.getValue();
       switch (nome) {
         case "TodasAs" -> partes.add(new TodasAs(lerLista(valor)));
         case "AlgumaDas" -> partes.add(new AlgumaDas(lerLista(valor)));
         case "Negacao" -> partes.add(new Negacao(ler(valor)));
+        case "Opaca" -> throw new IllegalArgumentException(
+            "Condição opaca não volta de documento: o que foi escrito é código, não dado");
         default -> partes.add(lerComparacoes(nome, valor));
       }
     }
@@ -50,28 +59,31 @@ public final class ConditionJson {
     return partes.size() == 1 ? partes.get(0) : new TodasAs(partes);
   }
 
-  private static List<Condition> lerLista(JsonNode node) {
+  private static List<Condition> lerLista(Object node) {
+    if (!(node instanceof List))
+      throw new IllegalArgumentException("TodasAs e AlgumaDas esperam uma lista de condições");
     var res = new ArrayList<Condition>();
-    node.forEach(item -> res.add(ler(item)));
+    for (Object item : (List<?>) node)
+      res.add(ler(item));
     return res;
   }
 
   /** {@code { "Igual": { "chave": [...], "outra": [...] } }} */
-  private static Condition lerComparacoes(String operador, JsonNode porChave) {
+  private static Condition lerComparacoes(String operador, Object porChave) {
     var op = Operadores.get(operador);
+    if (!(porChave instanceof Map))
+      throw new IllegalArgumentException(
+          "O operador " + operador + " espera um objeto de chave para valores");
     var res = new ArrayList<Condition>();
-    porChave.fieldNames().forEachRemaining(chave -> res.add(
-        new Comparacao(op, chave, textos(porChave.get(chave)))));
+    for (var entrada : ((Map<?, ?>) porChave).entrySet())
+      res.add(new Comparacao(op, String.valueOf(entrada.getKey()), textos(entrada.getValue())));
     return res.size() == 1 ? res.get(0) : new TodasAs(res);
   }
 
-  private static List<String> textos(JsonNode node) {
-    if (node.isArray()) {
-      var res = new ArrayList<String>();
-      node.forEach(item -> res.add(item.asText()));
-      return res;
-    }
-    return List.of(node.asText());
+  private static List<String> textos(Object valor) {
+    if (valor instanceof List<?> lista)
+      return lista.stream().map(String::valueOf).toList();
+    return List.of(String.valueOf(valor));
   }
 
   private static final class Escritor implements ConditionVisitor<Object> {
