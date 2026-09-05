@@ -13,7 +13,7 @@ import poo.classroom.iam.SecurityContext;
 import poo.iam.AccessResolver;
 import poo.iam.Group;
 import poo.iam.MembershipManager;
-import poo.iam.PrincipalDirectory;
+import poo.iam.spi.PrincipalDirectory;
 import poo.iam.User;
 import poo.iam.query.PolicyQuery;
 import poo.iam.query.SqlWhereRenderer;

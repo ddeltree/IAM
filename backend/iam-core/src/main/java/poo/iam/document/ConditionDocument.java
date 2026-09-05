@@ -1,9 +1,19 @@
-package poo.iam.condition;
+package poo.iam.document;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import poo.iam.condition.AlgumaDas;
+import poo.iam.condition.Comparacao;
+import poo.iam.condition.CondicaoOpaca;
+import poo.iam.condition.Condition;
+import poo.iam.condition.ConditionVisitor;
+import poo.iam.condition.Negacao;
+import poo.iam.condition.Operadores;
+import poo.iam.condition.Sempre;
+import poo.iam.condition.TodasAs;
 
 /**
  * Converte a árvore de condições de e para a forma documental do bloco
@@ -22,9 +32,9 @@ import java.util.Map;
  * A escrita é um {@link ConditionVisitor}; a leitura despacha pelo registro de
  * {@link Operadores}, então acrescentar um operador não mexe aqui.
  */
-public final class ConditionJson {
+public final class ConditionDocument {
 
-  private ConditionJson() {
+  private ConditionDocument() {
   }
 
   /** {@code null} quando a condição é irrestrita — não há o que escrever. */

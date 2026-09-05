@@ -1,4 +1,4 @@
-package poo.iam.query;
+package poo.iam.spi;
 
 /**
  * Traduz uma chave de condição para SQL.

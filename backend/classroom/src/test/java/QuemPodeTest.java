@@ -14,7 +14,7 @@ import poo.classroom.iam.ClassroomPermission;
 import poo.classroom.iam.SecurityContext;
 import poo.iam.Group;
 import poo.iam.MembershipManager;
-import poo.iam.PrincipalDirectory;
+import poo.iam.spi.PrincipalDirectory;
 import poo.iam.Resource;
 import poo.iam.User;
 import poo.iam.query.PolicyQuery;

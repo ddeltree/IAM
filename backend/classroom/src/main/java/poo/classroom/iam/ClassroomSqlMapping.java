@@ -1,6 +1,6 @@
 package poo.classroom.iam;
 
-import poo.iam.query.SqlMapping;
+import poo.iam.spi.SqlMapping;
 
 /**
  * A outra metade do vocabulário de chaves: onde cada uma mora no banco.

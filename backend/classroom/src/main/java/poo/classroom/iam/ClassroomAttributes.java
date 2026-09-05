@@ -6,7 +6,7 @@ import java.util.Map;
 import poo.classroom.Comentario;
 import poo.classroom.Publicacao;
 import poo.classroom.Turma;
-import poo.iam.AttributeProvider;
+import poo.iam.spi.AttributeProvider;
 import poo.iam.ContextResolver;
 import poo.iam.PrincipalResource;
 import poo.iam.Resource;

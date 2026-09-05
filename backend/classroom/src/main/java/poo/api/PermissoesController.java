@@ -12,8 +12,8 @@ import poo.classroom.iam.SecurityContext;
 import poo.classroom.iam.ClassroomPermission;
 import poo.iam.Decisao;
 import poo.iam.Group;
-import poo.iam.PolicyJson;
-import poo.iam.PrincipalDirectory;
+import poo.iam.document.PolicyDocument;
+import poo.iam.spi.PrincipalDirectory;
 import poo.classroom.iam.ClassroomSqlMapping;
 import poo.iam.query.PolicyQuery;
 import poo.iam.query.SqlWhereRenderer;
@@ -124,9 +124,9 @@ public class PermissoesController {
     Utils.hasPermissionOrThrow(ctx, poo.classroom.iam.ClassroomPermission.LISTAR_USUARIOS);
     var auth = SecurityContext.getInstance();
     ctx.json(List.of(
-        PolicyJson.deUsuario(auth.getAdmin()),
-        PolicyJson.deGrupo(auth.getProfessores()),
-        PolicyJson.deGrupo(auth.getAlunos())));
+        PolicyDocument.deUsuario(auth.getAdmin()),
+        PolicyDocument.deGrupo(auth.getProfessores()),
+        PolicyDocument.deGrupo(auth.getAlunos())));
   }
 
   /**

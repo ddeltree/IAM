@@ -1,7 +1,10 @@
-package poo.iam;
+package poo.iam.spi;
 
 import java.util.List;
 import java.util.Map;
+
+import poo.iam.Resource;
+import poo.iam.ResourceType;
 
 /**
  * Traduz um recurso da aplicação nas chaves de condição que as políticas leem.

@@ -11,7 +11,7 @@ import poo.iam.ContextResolver;
 import poo.iam.Effect;
 import poo.iam.Group;
 import poo.iam.Permission;
-import poo.iam.PrincipalDirectory;
+import poo.iam.spi.PrincipalDirectory;
 import poo.iam.Resource;
 import poo.iam.Statement;
 import poo.iam.User;

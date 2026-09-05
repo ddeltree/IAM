@@ -1,6 +1,9 @@
-package poo.iam;
+package poo.iam.spi;
 
 import java.util.Collection;
+
+import poo.iam.Group;
+import poo.iam.User;
 
 /**
  * De onde o motor tira a lista de principais quando a pergunta é ao contrário

@@ -6,6 +6,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import poo.iam.spi.AttributeProvider;
+
 /**
  * Monta o {@link RequestContext} de um pedido a partir dos provedores que a
  * aplicação registrou.

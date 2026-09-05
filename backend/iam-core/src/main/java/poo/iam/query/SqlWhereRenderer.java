@@ -2,6 +2,8 @@ package poo.iam.query;
 
 import java.util.stream.Collectors;
 
+import poo.iam.spi.SqlMapping;
+
 import poo.iam.query.ResourceConstraint.Alguma;
 import poo.iam.query.ResourceConstraint.AtributoContem;
 import poo.iam.query.ResourceConstraint.AtributoIgual;

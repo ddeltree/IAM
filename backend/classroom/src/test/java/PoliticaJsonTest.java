@@ -15,12 +15,12 @@ import poo.classroom.Turma;
 import poo.classroom.iam.SecurityContext;
 import poo.iam.ContextResolver;
 import poo.iam.MembershipManager;
-import poo.iam.PolicyJson;
+import poo.iam.document.PolicyDocument;
 import poo.iam.RequestContext;
 import poo.iam.Resource;
 import poo.iam.Statement;
 import poo.iam.User;
-import poo.iam.condition.ConditionJson;
+import poo.iam.document.ConditionDocument;
 
 /**
  * A política como documento.
@@ -39,7 +39,7 @@ public class PoliticaJsonTest extends ApiFixture {
     var auth = SecurityContext.getInstance();
     auth.reset();
 
-    var json = MAPPER.valueToTree(PolicyJson.deGrupo(auth.getProfessores())).toString();
+    var json = MAPPER.valueToTree(PolicyDocument.deGrupo(auth.getProfessores())).toString();
 
     assertTrue(json.contains("\"principal\":\"Professores\""));
     assertTrue(json.contains("ALLOW:EXCLUIR_POST:POST"));
@@ -100,8 +100,8 @@ public class PoliticaJsonTest extends ApiFixture {
       var original = statement.getCondition();
       // ida e volta por texto de verdade: o documento é serializado e
       // reinterpretado, não apenas convertido de árvore para árvore
-      var texto = MAPPER.writeValueAsString(ConditionJson.escrever(original));
-      var relido = ConditionJson.ler(MAPPER.readValue(texto, Object.class));
+      var texto = MAPPER.writeValueAsString(ConditionDocument.escrever(original));
+      var relido = ConditionDocument.ler(MAPPER.readValue(texto, Object.class));
 
       for (RequestContext ctx : contextos) {
         assertEquals(original.avaliar(ctx), relido.avaliar(ctx),
