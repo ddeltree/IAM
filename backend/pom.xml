@@ -17,6 +17,7 @@
     <modules>
         <module>iam-core</module>
         <module>classroom</module>
+        <module>console</module>
     </modules>
 
     <properties>

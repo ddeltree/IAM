@@ -224,6 +224,27 @@ public final class AuthorizationEngine {
     return explicar(principal, permission, resource, Map.of());
   }
 
+  /**
+   * Todas as cláusulas que valem para este principal, cada uma rotulada com de
+   * onde vem — as próprias, as dos grupos, as das políticas anexadas.
+   *
+   * {@link Principal#getStatements()} devolve só as próprias, o que é o que o
+   * motor precisa a cada nível da travessia. Quem quer <em>mostrar</em> a
+   * política de alguém precisa da soma, e percorrer o grafo por fora seria
+   * repetir a travessia — com o detalhe de que esquecer o conjunto de visitados
+   * ali trava quem chamar.
+   */
+  public List<ClausulaDeOrigem> clausulasDe(Principal principal) {
+    var res = new ArrayList<ClausulaDeOrigem>();
+    if (principal == null)
+      return res;
+    percorrer(principal, null, (statement, origem) -> {
+      res.add(new ClausulaDeOrigem(statement, origem));
+      return false;
+    });
+    return res;
+  }
+
   private static final class Achado {
     final Statement statement;
     final String origem;
