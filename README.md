@@ -1,15 +1,22 @@
-# IAM — sistema de autorização com uma sala de aula por cima
+# IAM — um sistema de autorização, e duas aplicações dele
 
 Trabalho de POO. O assunto é o **sistema de autorização**: um componente
 genérico, inspirado no IAM da AWS, que decide se alguém pode uma ação sobre um
-recurso — e que se deixa consultar. A sala de aula virtual existe para
-exercitá-lo, não o contrário.
+recurso — e que se deixa consultar. As duas aplicações existem para exercitá-lo,
+não o contrário.
 
 ```
 backend/iam-core/   o componente. Zero dependências de compilação.
-backend/classroom/  o domínio (turmas, posts, atividades) e as rotas HTTP
-frontend/           React + Vite, para operar tudo pelo navegador
+backend/classroom/  uma aplicação: turmas, posts, atividades      :7000
+backend/console/    outra: um console de IAM sem domínio fixo     :7001
+frontend/           a interface do classroom                      :5173
+console-ui/         a interface do console                        :5174
 ```
+
+Duas aplicações, de formas opostas: o classroom declara o vocabulário todo em
+enums, e o console deixa você criá-lo na tela. Nenhuma das duas sabe que a outra
+existe. **Para ver o sistema funcionando, o console é a porta de entrada** — e há
+um [roteiro de apresentação](ROTEIRO.md) com o passo a passo.
 
 ## O que o núcleo faz
 
@@ -40,31 +47,41 @@ A última devolve um filtro que vira predicado em memória **ou** cláusula
 
 Tem ainda grupos, políticas nomeadas anexáveis, políticas no próprio recurso,
 papéis assumíveis e sessões. Detalhes em
-[`backend/iam-core/README.md`](backend/iam-core/README.md).
+[`backend/iam-core/README.md`](backend/iam-core/README.md), e o console em
+[`backend/console/README.md`](backend/console/README.md).
 
 ## Como executar
 
 Precisa de **JDK 17+**, **Maven** e **pnpm**.
 
-### Backend (porta 7000)
+```bash
+cd backend
+mvn install -DskipTests    # uma vez: os dois módulos dependem do iam-core
+                           # como artefato, não pelo reator
+```
+
+### O console — comece por aqui
 
 ```bash
 cd backend
-mvn install -DskipTests
-mvn -pl classroom dependency:build-classpath -Dmdep.outputFile=cp.txt
-java -cp "iam-core/target/classes:classroom/target/classes:$(cat classroom/cp.txt)" poo.Main
+mvn -pl console dependency:build-classpath -Dmdep.outputFile=cp.txt
+java -cp "iam-core/target/classes:console/target/classes:$(cat console/cp.txt)" poo.console.Main
+
+cd ../console-ui && pnpm install && pnpm dev
 ```
 
-O `mvn install` é necessário uma vez porque o `classroom` depende do `iam-core`
-como artefato. Depois, só o `java -cp` a cada mudança (com `mvn -o compile`
-antes).
+Abra <http://localhost:5174>. Ele sobe com um cenário pronto — um serviço de
+arquivos com usuárias, grupos, políticas e um papel — escolhido para exercitar
+cada capacidade do núcleo de uma vez.
 
-### Frontend (porta 5173)
+### O classroom
 
 ```bash
-cd frontend
-pnpm install
-pnpm dev
+cd backend
+mvn -pl classroom dependency:build-classpath -Dmdep.outputFile=cp.txt
+java -cp "iam-core/target/classes:classroom/target/classes:$(cat classroom/cp.txt)" poo.Main
+
+cd ../frontend && pnpm install && pnpm dev
 ```
 
 Abra <http://localhost:5173>. O Vite faz proxy de `/api` para o `:7000` — é o
@@ -73,10 +90,10 @@ que mantém tudo na mesma origem e faz o cookie de sessão chegar ao backend.
 ### Testes
 
 ```bash
-cd backend && mvn test     # 43 no núcleo, 104 na aplicação
+cd backend && mvn test     # 51 no núcleo, 104 no classroom, 11 no console
 ```
 
-## Primeiros passos
+## Primeiros passos no classroom
 
 O estado vive em memória e some quando o servidor para. Ao subir só existe o
 **ADMIN**, com id `1`. Não há senha: a autenticação é o cookie `uid` com o id
@@ -96,18 +113,21 @@ responsável **exclui mas não edita**: corrigir texto alheio é da moderação,
 
 ```
 backend/
-  pom.xml                    pai, dois módulos
+  pom.xml                    pai, três módulos
   iam-core/                  o componente — sem dependência nenhuma
     src/main/java/poo/iam/
       spi/                   o contrato de integração: 7 interfaces
       condition/             a árvore de condições (Composite + Visitor)
       document/              política ↔ documento, nos dois sentidos
       query/                 as consultas e os dois renderizadores
-  classroom/
-    src/main/java/poo/classroom/   o domínio
+  classroom/                 vocabulário fechado, declarado em enums
+    src/main/java/poo/classroom/       o domínio
     src/main/java/poo/classroom/iam/   a adaptação ao núcleo
-    src/main/java/poo/api/         as rotas HTTP
+    src/main/java/poo/api/             as rotas HTTP
     src/main/resources/politica-padrao.json   a política, como dado
-frontend/src/
-  lib/ hooks/ providers/ components/
+  console/                   vocabulário aberto, criado na tela
+    src/main/java/poo/console/         o cenário e os tipos livres
+    src/main/java/poo/console/api/     as rotas, incluindo /simular
+frontend/src/                a interface do classroom
+console-ui/src/              a interface do console
 ```
