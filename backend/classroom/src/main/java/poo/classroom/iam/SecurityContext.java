@@ -1,11 +1,15 @@
 package poo.classroom.iam;
 
 import static poo.classroom.iam.ClassroomConditions.*;
+
+import poo.iam.condition.Condition;
 import static poo.classroom.iam.ClassroomPermission.*;
 
+import poo.iam.Effect;
 import poo.iam.Group;
 import poo.iam.Iam;
 import poo.iam.IamFactory;
+import poo.iam.Statement;
 import poo.iam.User;
 
 /**
@@ -87,26 +91,27 @@ public class SecurityContext {
   /**
    * O administrador é um moderador: enxerga e corrige tudo, sem restrição de
    * turma — e por isso mesmo não cria turma, post, atividade nem comentário.
+   *
+   * Isto eram quinze concessões enumeradas, uma por ação, e cada ação nova
+   * exigia lembrar de acrescentá-lo — sendo que esquecer não acusava nada, só
+   * deixava a política errada em silêncio. Agora são duas cláusulas: pode
+   * tudo, menos criar.
    */
   private void configurarAdmin() {
-    admin.grantPermission(LISTAR_TURMAS.get());
-    admin.grantPermission(VER_TURMA.get());
-    admin.grantPermission(LISTAR_ATIVIDADES.get());
-    admin.grantPermission(LISTAR_POSTS.get());
-    admin.grantPermission(LISTAR_COMENTARIOS.get());
-    admin.grantPermission(LISTAR_PARTICIPANTES.get());
-    admin.grantPermission(LISTAR_USUARIOS.get());
+    admin.add(Statement.allow("*", "*"));
 
-    admin.grantPermission(CRIAR_PROFESSOR.get());
+    // As três negações abaixo é que dizem o que ele *não* é. Negação explícita
+    // vence qualquer concessão, inclusive o curinga acima — é exatamente para
+    // isso que a ordem de avaliação da AWS existe.
 
-    admin.grantPermission(EDITAR_ATIVIDADE.get());
-    admin.grantPermission(EDITAR_POST.get());
-    admin.grantPermission(EDITAR_COMENTARIO.get());
+    // não cria conteúdo: modera o que os outros criam. As quatro ações de criar
+    // conteúdo são todas sobre a TURMA, então uma cláusula dá conta — e
+    // CRIAR_PROFESSOR, que é sobre USUARIO, continua valendo
+    admin.add(Statement.de(Effect.DENY, "CRIAR_*", "TURMA", Condition.SEMPRE));
+    admin.add(Statement.de(Effect.DENY, "CRIAR_ALUNO", "*", Condition.SEMPRE));
 
-    admin.grantPermission(EXCLUIR_ATIVIDADE.get());
-    admin.grantPermission(EXCLUIR_POST.get());
-    admin.grantPermission(EXCLUIR_COMENTARIO.get());
-    admin.grantPermission(EXCLUIR_USUARIO.get());
+    // nem monta turma: quem matricula e desmatricula é o professor dela
+    admin.add(Statement.de(Effect.DENY, "*MATRICULAR_ALUNO", "*", Condition.SEMPRE));
   }
 
   /** O professor manda na turma dele, e em nenhuma outra. */

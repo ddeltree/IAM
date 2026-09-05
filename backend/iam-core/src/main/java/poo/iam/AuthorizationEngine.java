@@ -58,7 +58,7 @@ public final class AuthorizationEngine {
     // objeto: o administrador recebe EDITAR_POST irrestrito, e nada impediria
     // essa cláusula de valer sobre uma turma. Recurso nulo é permitido de
     // propósito — é como se pedem ações que não têm alvo, como criar uma turma.
-    if (resource != null && !resource.getType().equals(permission.getResourceType()))
+    if (resource != null && !resource.getType().name().equals(permission.getResourceType().name()))
       return Decisao.negacaoPadrao(
           permission + " não se aplica a um recurso do tipo " + resource.getType().name());
 

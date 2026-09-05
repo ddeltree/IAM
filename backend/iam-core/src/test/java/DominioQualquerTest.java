@@ -161,7 +161,9 @@ class DominioQualquerTest {
         .filter(s -> "APAGAR".equals(s.get("action")))
         .findFirst()
         .orElseThrow();
-    assertEquals("ARQUIVO", apagar.get("resourceType"));
+    // o documento diz o padrão de recurso, não um tipo: é o campo Resource da
+    // AWS, e é o que permite uma cláusula mirar uma instância
+    assertEquals("ARQUIVO", apagar.get("resource"));
     // a condição saiu como dado, com o vocabulário deste domínio dentro
     assertTrue(apagar.get("condition").toString().contains("pasta:donoId"),
         "a condição não apareceu no documento: " + apagar);

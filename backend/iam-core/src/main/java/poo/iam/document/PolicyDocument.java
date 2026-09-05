@@ -50,8 +50,8 @@ public final class PolicyDocument {
       var item = new LinkedHashMap<String, Object>();
       item.put("sid", statement.getSid());
       item.put("effect", statement.getEffect().name());
-      item.put("action", statement.getPermission().getAction().name());
-      item.put("resourceType", statement.getPermission().getResourceType().name());
+      item.put("action", statement.getAction().toString());
+      item.put("resource", statement.getResource().toString());
       var condicao = ConditionDocument.escrever(statement.getCondition());
       if (condicao != null)
         item.put("condition", condicao);

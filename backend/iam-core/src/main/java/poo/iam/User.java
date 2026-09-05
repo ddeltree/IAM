@@ -50,6 +50,17 @@ public class User implements Principal, Resource {
 
   // PERMISSIONS
 
+  /**
+   * Acrescenta uma cláusula pronta.
+   *
+   * É por aqui que entram as que não cabem em {@code grantPermission}: as com
+   * curinga, as que miram um recurso específico e as que vêm de um documento
+   * carregado em vez do código.
+   */
+  public boolean add(Statement statement) {
+    return registrar(policy.add(statement), Mudanca.CONCEDIDA, statement.getPermission());
+  }
+
   /** Concessão irrestrita. */
   public boolean grantPermission(Permission permission) {
     return registrar(policy.grant(permission), Mudanca.CONCEDIDA, permission);
@@ -84,6 +95,10 @@ public class User implements Principal, Resource {
     return registrar(policy.allow(permission), Mudanca.NEGACAO_REMOVIDA, permission);
   }
 
+  /**
+   * Avisa o ouvinte, se houver. A permissão vem {@code null} quando a cláusula
+   * usa curinga — não há uma permissão para nomear, e mentir uma seria pior.
+   */
   private boolean registrar(boolean mudou, Mudanca mudanca, Permission permission) {
     if (mudou)
       ouvinte.politicaMudou(this, mudanca, permission);

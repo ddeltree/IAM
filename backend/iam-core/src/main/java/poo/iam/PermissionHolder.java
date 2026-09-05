@@ -86,10 +86,19 @@ public class PermissionHolder {
     return permissoesCom(Effect.DENY);
   }
 
+  /**
+   * As permissões nomeadas exatamente por alguma cláusula deste efeito.
+   *
+   * Uma cláusula com curinga fica de fora: ela não corresponde a uma permissão,
+   * e sim a um conjunto que só se enumera sabendo o que existe. Quem responde
+   * "o que este principal pode?" contando com curingas é
+   * {@link EffectivePermissions}, que tem o catálogo.
+   */
   private Set<Permission> permissoesCom(Effect efeito) {
     return statements.stream()
         .filter(s -> s.getEffect() == efeito)
         .map(Statement::getPermission)
+        .filter(Objects::nonNull)
         .collect(Collectors.toUnmodifiableSet());
   }
 
