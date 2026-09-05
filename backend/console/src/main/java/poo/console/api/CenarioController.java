@@ -33,7 +33,7 @@ public class CenarioController {
     res.put("papeis", c.papeis().stream().map(p -> Json.principal(p, c)).toList());
     res.put("sessoes", c.sessoes().stream().map(s -> Json.principal(s, c)).toList());
 
-    res.put("politicas", c.politicas().stream().map(Json::politica).toList());
+    res.put("politicas", c.politicas().stream().map(p -> Json.politicaComAnexos(p, c)).toList());
     res.put("recursos", c.recursos().stream().map(CenarioController::recurso).toList());
 
     res.put("acoes", List.copyOf(c.acoes()));

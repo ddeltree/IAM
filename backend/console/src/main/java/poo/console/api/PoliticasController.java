@@ -29,25 +29,9 @@ public class PoliticasController {
 
   private static void listar(Context ctx) {
     var c = Cenario.atual();
-    ctx.json(c.politicas().stream().map(policy -> {
-      var m = new java.util.LinkedHashMap<String, Object>(Json.politica(policy));
-      // quem tem esta política anexada — sem isso, apagar uma seria às cegas
-      m.put("anexadaA", anexadaA(c, policy));
-      return m;
-    }).toList());
-  }
-
-  private static List<String> anexadaA(Cenario c, Policy policy) {
-    var quem = new java.util.ArrayList<String>();
-    c.usuarios().forEach(u -> {
-      if (u.getPoliticasAnexadas().contains(policy))
-        quem.add(u.getId());
-    });
-    c.grupos().forEach(g -> {
-      if (g.getPoliticasAnexadas().contains(policy))
-        quem.add(g.getId());
-    });
-    return quem;
+    // a mesma forma que o /cenario devolve: duas respostas diferentes para a
+    // mesma coisa é como um campo some sem ninguém notar
+    ctx.json(c.politicas().stream().map(p -> Json.politicaComAnexos(p, c)).toList());
   }
 
   /** O documento inteiro, como o {@code GetAccountAuthorizationDetails} da AWS. */

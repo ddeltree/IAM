@@ -46,6 +46,28 @@ public final class Json {
     return Map.of("nome", p.getNome(), "statements", statements(p.getStatements()));
   }
 
+  /**
+   * A política com quem a tem anexada.
+   *
+   * Fica aqui, e não só no controller de políticas, porque a tela lê a lista do
+   * cenário inteiro — e dois endpoints devolvendo formas diferentes para a
+   * mesma coisa é como um campo some sem ninguém notar.
+   */
+  public static Map<String, Object> politicaComAnexos(Policy p, Cenario cenario) {
+    var m = new LinkedHashMap<String, Object>(politica(p));
+    var quem = new ArrayList<String>();
+    cenario.usuarios().forEach(u -> {
+      if (u.getPoliticasAnexadas().contains(p))
+        quem.add(u.getId());
+    });
+    cenario.grupos().forEach(g -> {
+      if (g.getPoliticasAnexadas().contains(p))
+        quem.add(g.getId());
+    });
+    m.put("anexadaA", quem);
+    return m;
+  }
+
   public static Map<String, Object> permissao(Permission p) {
     return Map.of("acao", p.getAction().name(), "tipo", p.getResourceType().name(),
         "rotulo", p.getAction().name() + " · " + p.getResourceType().name());
