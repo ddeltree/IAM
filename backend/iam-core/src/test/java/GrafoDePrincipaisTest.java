@@ -20,6 +20,7 @@ import poo.iam.Principal;
 import poo.iam.PrincipalResource;
 import poo.iam.ResourceType;
 import poo.iam.Statement;
+import poo.iam.User;
 
 /**
  * A política de um principal é a dele mais a de quem ele herda, e o motor
@@ -118,5 +119,35 @@ class GrafoDePrincipaisTest {
     assertEquals("Diretoria", AccessResolver.avaliar(pessoa, SAIR, null).getOrigem());
     // própria: "inline", como na AWS
     assertEquals("inline", AccessResolver.avaliar(pessoa, ENTRAR, null).getOrigem());
+  }
+
+  @Test
+  void quemQuiserAcompanharAPoliticaRegistraUmOuvinte() {
+    var anotado = new ArrayList<String>();
+
+    // o núcleo não imprime mais nada por conta própria; isto costumava ser um
+    // System.out.println dentro do próprio User
+    var user = new User("Ana").comOuvinte(
+        (alvo, mudanca, permission) -> anotado.add(alvo.getName() + " " + mudanca + " " + permission));
+
+    user.grantPermission(ENTRAR);
+    user.denyPermission(SAIR);
+    user.grantPermission(ENTRAR); // repetida: não muda nada, não avisa nada
+
+    assertEquals(List.of("Ana CONCEDIDA ENTRAR:USUARIO", "Ana NEGADA SAIR:USUARIO"), anotado);
+  }
+
+  @Test
+  void oIdPodeVirDaAplicacao() {
+    // o contador do núcleo é conveniência, não imposição: aqui o id é o que a
+    // aplicação já usa
+    var user = new User("550e8400-e29b-41d4-a716-446655440000", "Ana");
+    assertEquals("550e8400-e29b-41d4-a716-446655440000", user.getId());
+
+    var comCondicao = Statement.allow(ENTRAR,
+        poo.iam.condition.Condition.igual("recurso:id", "${principal:id}"));
+    user.grantPermission(ENTRAR, poo.iam.condition.Condition.igual("recurso:id", "${principal:id}"));
+    assertTrue(user.getStatements().contains(comCondicao),
+        "a variável de política resolve contra o id que a aplicação deu");
   }
 }

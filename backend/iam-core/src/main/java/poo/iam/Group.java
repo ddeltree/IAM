@@ -3,12 +3,15 @@ package poo.iam;
 import java.util.*;
 
 import poo.iam.condition.Condition;
+import poo.iam.spi.PolicyListener;
+import poo.iam.spi.PolicyListener.Mudanca;
 
 public class Group implements Principal, Resource {
   private final String id;
   private final String name;
   private final Set<User> users = new HashSet<>();
   private final PermissionHolder policy = new PermissionHolder(); // composition
+  private PolicyListener ouvinte = PolicyListener.SILENCIOSO;
 
   public Group(String name) {
     this(name, name);
@@ -63,39 +66,45 @@ public class Group implements Principal, Resource {
     return name;
   }
 
+  /** Quem é avisado quando esta política muda. O padrão é ninguém. */
+  public Group comOuvinte(PolicyListener ouvinte) {
+    this.ouvinte = ouvinte == null ? PolicyListener.SILENCIOSO : ouvinte;
+    return this;
+  }
+
   // PERMISSIONS
 
   /** Concessão irrestrita para todos os membros. */
   public boolean grantPermission(Permission permission) {
-    return registrar(policy.grant(permission), "GRANTED", permission);
+    return registrar(policy.grant(permission), Mudanca.CONCEDIDA, permission);
   }
 
   /** Concessão válida só quando a condição passar. */
   public boolean grantPermission(Permission permission, Condition condition) {
-    return registrar(policy.grant(permission, condition), "GRANTED", permission);
+    return registrar(policy.grant(permission, condition), Mudanca.CONCEDIDA, permission);
   }
 
   public boolean revokePermission(Permission permission) {
-    return registrar(policy.revoke(permission), "REVOKED", permission);
+    return registrar(policy.revoke(permission), Mudanca.REVOGADA, permission);
   }
 
   /** Nega a permissão para todos os membros do grupo. */
   public boolean denyPermission(Permission permission) {
-    return registrar(policy.deny(permission), "DENIED", permission);
+    return registrar(policy.deny(permission), Mudanca.NEGADA, permission);
   }
 
   public boolean denyPermission(Permission permission, Condition condition) {
-    return registrar(policy.deny(permission, condition), "DENIED", permission);
+    return registrar(policy.deny(permission, condition), Mudanca.NEGADA, permission);
   }
 
   /** Remove a negação explícita do grupo. Não concede a permissão. */
   public boolean allowPermission(Permission permission) {
-    return registrar(policy.allow(permission), "deny removed", permission);
+    return registrar(policy.allow(permission), Mudanca.NEGACAO_REMOVIDA, permission);
   }
 
-  private boolean registrar(boolean mudou, String verbo, Permission permission) {
+  private boolean registrar(boolean mudou, Mudanca mudanca, Permission permission) {
     if (mudou)
-      System.out.println("(" + name + ") Group permission " + verbo + ": " + permission);
+      ouvinte.politicaMudou(this, mudanca, permission);
     return mudou;
   }
 

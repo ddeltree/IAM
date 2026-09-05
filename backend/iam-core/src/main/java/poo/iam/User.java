@@ -3,35 +3,65 @@ package poo.iam;
 import java.util.*;
 
 import poo.iam.condition.Condition;
+import poo.iam.spi.PolicyListener;
+import poo.iam.spi.PolicyListener.Mudanca;
 
 public class User implements Principal, Resource {
   private static long proximoId = 1; // contador global
-  protected final String id = String.valueOf(proximoId++);
+  private final String id;
   private String name;
   private final Set<Group> groups = new HashSet<>();
   private final PermissionHolder policy = new PermissionHolder(); // composition
+  private PolicyListener ouvinte = PolicyListener.SILENCIOSO;
 
   public User() {
+    this(proximoId(), null);
   }
 
   public User(String name) {
+    this(proximoId(), name);
+  }
+
+  /**
+   * Com o id vindo de fora.
+   *
+   * O contador desta classe é uma conveniência para quem não tem um id
+   * próprio, não uma imposição: uma aplicação com chave de banco, UUID ou o
+   * {@code sub} de um token constrói o usuário com o identificador que já usa,
+   * e o núcleo não precisa saber de onde ele veio.
+   */
+  public User(String id, String name) {
+    this.id = id;
     this.name = name;
+  }
+
+  private static String proximoId() {
+    return String.valueOf(proximoId++);
+  }
+
+  /**
+   * Quem é avisado quando esta política muda. O padrão é ninguém: uma
+   * biblioteca não escreve na saída de quem a usa.
+   */
+  public User comOuvinte(PolicyListener ouvinte) {
+    this.ouvinte = ouvinte == null ? PolicyListener.SILENCIOSO : ouvinte;
+    return this;
   }
 
   // PERMISSIONS
 
   /** Concessão irrestrita. */
   public boolean grantPermission(Permission permission) {
-    return registrar(policy.grant(permission), "granted", permission);
+    return registrar(policy.grant(permission), Mudanca.CONCEDIDA, permission);
   }
 
   /** Concessão válida só quando a condição passar. */
   public boolean grantPermission(Permission permission, Condition condition) {
-    return registrar(policy.grant(permission, condition), "granted", permission);
+    return registrar(policy.grant(permission, condition), Mudanca.CONCEDIDA, permission);
   }
 
   public boolean revokePermission(Permission permission) {
-    return registrar(policy.revoke(permission), "revoked", permission);
+    return registrar(policy.revoke(permission), Mudanca.REVOGADA, permission);
   }
 
   /**
@@ -39,11 +69,11 @@ public class User implements Principal, Resource {
    * concedem.
    */
   public boolean denyPermission(Permission permission) {
-    return registrar(policy.deny(permission), "DENIED", permission);
+    return registrar(policy.deny(permission), Mudanca.NEGADA, permission);
   }
 
   public boolean denyPermission(Permission permission, Condition condition) {
-    return registrar(policy.deny(permission, condition), "DENIED", permission);
+    return registrar(policy.deny(permission, condition), Mudanca.NEGADA, permission);
   }
 
   /**
@@ -51,12 +81,12 @@ public class User implements Principal, Resource {
    * depender das permissões inline e das herdadas dos grupos.
    */
   public boolean allowPermission(Permission permission) {
-    return registrar(policy.allow(permission), "deny removed", permission);
+    return registrar(policy.allow(permission), Mudanca.NEGACAO_REMOVIDA, permission);
   }
 
-  private boolean registrar(boolean mudou, String verbo, Permission permission) {
+  private boolean registrar(boolean mudou, Mudanca mudanca, Permission permission) {
     if (mudou)
-      System.out.println("[" + id + "] User permission " + verbo + ": " + permission);
+      ouvinte.politicaMudou(this, mudanca, permission);
     return mudou;
   }
 
