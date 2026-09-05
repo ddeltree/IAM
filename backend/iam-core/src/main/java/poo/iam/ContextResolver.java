@@ -27,15 +27,30 @@ import poo.iam.spi.AttributeProvider;
 public final class ContextResolver {
 
   private final Map<ResourceType, AttributeProvider> provedores = new HashMap<>();
+  private AttributeProvider padrao;
   private Clock relogio = Clock.systemDefaultZone();
 
   public void registrar(AttributeProvider provedor) {
     provedores.put(provedor.tipo(), provedor);
   }
 
-  /** Esquece os provedores registrados. */
+  /**
+   * O provedor usado quando não há um específico para o tipo.
+   *
+   * Existe para os domínios em que os tipos nascem em tempo de execução — uma
+   * aplicação em que o usuário declara os tipos teria de registrar um provedor
+   * a cada tipo novo, e normalmente todos leriam do mesmo lugar. O
+   * {@link AttributeProvider#tipo()} do padrão é ignorado: ele responde por
+   * qualquer um.
+   */
+  public void registrarPadrao(AttributeProvider provedor) {
+    this.padrao = provedor;
+  }
+
+  /** Esquece os provedores registrados, inclusive o padrão. */
   public void limpar() {
     provedores.clear();
+    padrao = null;
   }
 
   /**
@@ -102,6 +117,8 @@ public final class ContextResolver {
 
   private Map<String, List<String>> atributosDe(Resource recurso) {
     var provedor = provedores.get(recurso.getType());
+    if (provedor == null)
+      provedor = padrao;
     if (provedor == null)
       return Map.of();
     return provedor.atributosDe(recurso);

@@ -50,6 +50,18 @@ public class User implements Principal, Resource {
 
   // PERMISSIONS
 
+  /**
+   * Remove uma cláusula inline. Não alcança as de políticas anexadas — para
+   * tirar aquelas, desanexe a política.
+   */
+  public boolean remover(Statement statement) {
+    return registrar(policy.remover(statement), Mudanca.REVOGADA, statement.getPermission());
+  }
+
+  public boolean removerPorSid(String sid) {
+    return policy.removerPorSid(sid);
+  }
+
   /** Só as cláusulas próprias, sem as das políticas anexadas. */
   public Set<Statement> getStatementsInline() {
     return policy.getStatementsInline();

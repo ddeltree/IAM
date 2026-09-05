@@ -52,6 +52,23 @@ public class PermissionHolder {
     return add(Statement.allow(permission, legado));
   }
 
+  /**
+   * Remove exatamente esta cláusula.
+   *
+   * {@link #revoke(Permission)} não serve para tudo: ele apaga <em>todas</em> as
+   * concessões de uma permissão e, por receber uma {@code Permission}, nem
+   * alcança uma cláusula escrita com curinga. Quem edita política uma linha por
+   * vez precisa disto.
+   */
+  public boolean remover(Statement statement) {
+    return statements.remove(statement);
+  }
+
+  /** Remove a cláusula com este {@code sid}, seja qual for o efeito. */
+  public boolean removerPorSid(String sid) {
+    return statements.removeIf(s -> s.getSid().equals(sid));
+  }
+
   /** Remove todas as concessões desta permissão, com ou sem condição. */
   public boolean revoke(Permission permission) {
     return statements.removeIf(

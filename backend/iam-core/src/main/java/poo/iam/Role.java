@@ -29,6 +29,7 @@ public final class Role implements Principal, Resource {
   private final String nome;
   private final PermissionHolder politica = new PermissionHolder();
   private final Set<Statement> confianca = new LinkedHashSet<>();
+  private int proximaConfianca = 1;
 
   public Role(String nome) {
     this(nome, nome);
@@ -64,6 +65,14 @@ public final class Role implements Principal, Resource {
     return politica.anexar(policy);
   }
 
+  public boolean remover(Statement statement) {
+    return politica.remover(statement);
+  }
+
+  public boolean removerPorSid(String sid) {
+    return politica.removerPorSid(sid);
+  }
+
   @Override
   public Set<Statement> getStatements() {
     return politica.getStatements();
@@ -79,16 +88,38 @@ public final class Role implements Principal, Resource {
    * grupo inteiro.
    */
   public Role confiaEm(poo.iam.condition.Condition quem) {
+    // cada autorização ganha um sid próprio: com um sid só para todas, tirar a
+    // confiança de uma pessoa tiraria a de todas, e nada acusaria
     confianca.add(Statement.de(Effect.ALLOW,
         ActionPattern.de(IamAction.ASSUMIR_PAPEL),
         ResourcePattern.de(this),
-        quem, "confianca:" + nome));
+        quem, "confianca:" + nome + ":" + proximaConfianca++));
     return this;
   }
 
   /** A política de confiança, na forma em que o motor a avalia. */
   public Policy getConfianca() {
     return new Policy("confianca:" + nome, Collections.unmodifiableSet(confianca));
+  }
+
+  /** As cláusulas de confiança, para inspecionar e editar uma a uma. */
+  public Set<Statement> getConfiancaStatements() {
+    return Collections.unmodifiableSet(confianca);
+  }
+
+  /**
+   * Retira uma autorização de assumir este papel.
+   *
+   * Sem isto, tirar a confiança de alguém exigiria reconstruir o papel — e com
+   * ele perderiam-se as políticas anexadas e as cláusulas próprias.
+   */
+  public boolean deixaDeConfiar(String sid) {
+    return confianca.removeIf(s -> s.getSid().equals(sid));
+  }
+
+  /** Acrescenta uma cláusula de confiança já montada, com o sid do autor. */
+  public boolean confiaEm(Statement clausula) {
+    return confianca.add(clausula);
   }
 
   @Override
