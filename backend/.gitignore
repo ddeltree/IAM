@@ -1,6 +1,9 @@
 # Maven target directory
 target/
 
+# classpath gerado para rodar o servidor (veja o README)
+cp.txt
+
 # Logs
 *.log
 
