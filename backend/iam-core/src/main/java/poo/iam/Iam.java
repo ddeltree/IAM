@@ -53,6 +53,11 @@ public final class Iam {
     return efetivas;
   }
 
+  /** Entrega sessões de papéis assumidos. */
+  public SessionBroker papeis() {
+    return new SessionBroker(motor);
+  }
+
   public ContextResolver contexto() {
     return motor.getContexto();
   }

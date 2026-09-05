@@ -2,7 +2,9 @@ package poo.iam.query;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
 
@@ -14,6 +16,8 @@ import poo.iam.spi.PrincipalDirectory;
 import poo.iam.spi.ResourcePolicyProvider;
 import poo.iam.RequestContext;
 import poo.iam.Resource;
+import poo.iam.Role;
+import poo.iam.SessionBroker;
 import poo.iam.Statement;
 import poo.iam.User;
 
@@ -47,13 +51,26 @@ public final class PolicyQuery {
 
   /** O resultado, com o rastro de quanto trabalho foi evitado. */
   public static final class Resultado {
+    /** Quem pode agora, sem assumir nada. */
     public final List<User> principais;
+    /**
+     * Quem <em>passaria</em> a poder assumindo um papel, por papel.
+     *
+     * Fica separado de propósito. Juntar seria mentir sobre o que a resposta
+     * significa: "quem pode excluir este post" e "quem consegue chegar a poder
+     * excluir este post" são perguntas diferentes, e uma auditoria que as
+     * confunde superestima o acesso atual. Quem quiser as duas somadas soma;
+     * quem não notar a diferença recebe a resposta estrita.
+     */
+    public final Map<String, List<User>> viaPapel;
     public final int avaliados;
     public final int conhecidos;
     public final boolean podou;
 
-    Resultado(List<User> principais, int avaliados, int conhecidos, boolean podou) {
+    Resultado(List<User> principais, Map<String, List<User>> viaPapel, int avaliados,
+        int conhecidos, boolean podou) {
       this.principais = principais;
+      this.viaPapel = viaPapel;
       this.avaliados = avaliados;
       this.conhecidos = conhecidos;
       this.podou = podou;
@@ -78,7 +95,41 @@ public final class PolicyQuery {
         .filter(u -> motor.isAllowed(u, permissao, recurso))
         .toList();
 
-    return new Resultado(permitidos, aAvaliar.size(), conhecidos, candidatos != null);
+    return new Resultado(permitidos, viaPapel(permissao, recurso), aAvaliar.size(), conhecidos,
+        candidatos != null);
+  }
+
+  /**
+   * Quem chegaria a poder assumindo um papel.
+   *
+   * É varredura, sem poda: para cada papel, quem tem confiança para assumi-lo,
+   * e depois se a sessão resultante alcança a permissão. Podar aqui exigiria
+   * extrair restrição de duas políticas encadeadas, e o ganho não pagaria — a
+   * quantidade de papéis é pequena por natureza.
+   *
+   * O detalhe que surpreende: sob uma sessão, {@code principal:id} é o id da
+   * sessão, não o da pessoa. Uma condição como "o autor pode editar" portanto
+   * <b>não</b> vale para quem assumiu um papel — o que está certo, e é
+   * exatamente o que separa agir como si mesmo de agir sob um papel.
+   */
+  private Map<String, List<User>> viaPapel(Permission permissao, Resource recurso) {
+    var papeis = diretorio.papeis();
+    if (papeis.isEmpty())
+      return Map.of();
+
+    var broker = new SessionBroker(motor);
+    var res = new LinkedHashMap<String, List<User>>();
+    for (Role papel : papeis) {
+      var chegam = new ArrayList<User>();
+      for (User user : diretorio.usuarios()) {
+        var sessao = broker.assumir(user, papel);
+        if (sessao != null && motor.isAllowed(sessao, permissao, recurso))
+          chegam.add(user);
+      }
+      if (!chegam.isEmpty())
+        res.put(papel.getName(), chegam);
+    }
+    return res;
   }
 
   /**

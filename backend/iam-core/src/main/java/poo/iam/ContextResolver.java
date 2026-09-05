@@ -78,6 +78,10 @@ public final class ContextResolver {
       if (principal.getName() != null)
         valores.put("principal:name", List.of(principal.getName()));
       valores.put("principal:groups", nomesDeQuemHerda(principal));
+
+      // as do próprio principal entram por último e com putIfAbsent: as do
+      // núcleo vencem, e ninguém forja o próprio id
+      principal.chavesDeContexto().forEach(valores::putIfAbsent);
     }
 
     for (Resource atual = alvo; atual != null; atual = atual.getPai()) {

@@ -8,4 +8,6 @@ package poo.iam;
 public enum PrincipalResource implements ResourceType {
   USUARIO,
   GRUPO,
+  /** Um papel que se assume temporariamente. Veja {@link Role}. */
+  PAPEL,
 }

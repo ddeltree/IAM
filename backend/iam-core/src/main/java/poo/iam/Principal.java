@@ -2,6 +2,7 @@ package poo.iam;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -35,5 +36,18 @@ public interface Principal {
   /** Os principais cujas políticas também valem para este. */
   default Collection<? extends Principal> herdaDe() {
     return List.of();
+  }
+
+  /**
+   * Chaves de contexto que este principal contribui sobre si mesmo.
+   *
+   * O núcleo já publica {@code principal:id}, {@code principal:name} e
+   * {@code principal:groups}; isto é para o que só a aplicação sabe — o
+   * departamento, o inquilino, o papel que uma sessão está assumindo. As
+   * chaves vêm com o nome completo, e as do núcleo vencem em caso de conflito:
+   * um principal não pode forjar o próprio id.
+   */
+  default Map<String, List<String>> chavesDeContexto() {
+    return Map.of();
   }
 }
