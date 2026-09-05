@@ -6,10 +6,11 @@ autorização (IAM) do backend; esta interface existe para exercitá-lo.
 ## Como rodar
 
 ```bash
-# backend (porta 7000)
+# backend (porta 7000) — veja o README da raiz para o detalhe
 cd backend
-mvn compile dependency:build-classpath -Dmdep.outputFile=cp.txt
-java -cp target/classes:$(cat cp.txt) poo.Main
+mvn install -DskipTests
+mvn -pl classroom dependency:build-classpath -Dmdep.outputFile=cp.txt
+java -cp "iam-core/target/classes:classroom/target/classes:$(cat classroom/cp.txt)" poo.Main
 
 # frontend (porta 5173)
 cd frontend
