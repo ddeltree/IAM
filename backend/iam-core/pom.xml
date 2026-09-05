@@ -23,6 +23,10 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <!-- escopo repetido de propósito: ele já vem do pom pai, mas este
+                 arquivo é o que se lê como especificação do módulo, e "sem
+                 dependência de compilação" precisa estar dito aqui -->
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
