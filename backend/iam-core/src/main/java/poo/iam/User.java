@@ -50,6 +50,29 @@ public class User implements Principal, Resource {
 
   // PERMISSIONS
 
+  /** Só as cláusulas próprias, sem as das políticas anexadas. */
+  public Set<Statement> getStatementsInline() {
+    return policy.getStatementsInline();
+  }
+
+  /**
+   * Anexa uma política nomeada — a <em>managed policy</em> da AWS.
+   *
+   * As cláusulas dela passam a valer sem serem copiadas: mudar a política muda
+   * o acesso de todos que a têm anexada, de uma vez.
+   */
+  public boolean anexar(Policy policy) {
+    return policy != null && this.policy.anexar(policy);
+  }
+
+  public boolean desanexar(Policy policy) {
+    return this.policy.desanexar(policy);
+  }
+
+  public java.util.List<Policy> getPoliticasAnexadas() {
+    return this.policy.getPoliticasAnexadas();
+  }
+
   /**
    * Acrescenta uma cláusula pronta.
    *

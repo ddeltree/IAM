@@ -1,0 +1,676 @@
+{
+  "politicas" : [ {
+    "nome" : "Administracao",
+    "statements" : [ {
+      "sid" : "ALLOW:*:*",
+      "effect" : "ALLOW",
+      "action" : "*",
+      "resource" : "*"
+    }, {
+      "sid" : "DENY:CRIAR_*:TURMA",
+      "effect" : "DENY",
+      "action" : "CRIAR_*",
+      "resource" : "TURMA"
+    }, {
+      "sid" : "DENY:CRIAR_ALUNO:*",
+      "effect" : "DENY",
+      "action" : "CRIAR_ALUNO",
+      "resource" : "*"
+    }, {
+      "sid" : "DENY:*MATRICULAR_ALUNO:*",
+      "effect" : "DENY",
+      "action" : "*MATRICULAR_ALUNO",
+      "resource" : "*"
+    } ]
+  }, {
+    "nome" : "Professor",
+    "statements" : [ {
+      "sid" : "ALLOW:LISTAR_TURMAS:TURMA",
+      "effect" : "ALLOW",
+      "action" : "LISTAR_TURMAS",
+      "resource" : "TURMA",
+      "condition" : {
+        "Igual" : {
+          "turma:professorId" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:VER_TURMA:TURMA",
+      "effect" : "ALLOW",
+      "action" : "VER_TURMA",
+      "resource" : "TURMA",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Professores" ]
+            }
+          }, {
+            "Igual" : {
+              "turma:professorId" : [ "${principal:id}" ]
+            }
+          } ]
+        }, {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Alunos" ]
+            }
+          }, {
+            "ParaAlgumValor:Igual" : {
+              "turma:alunoIds" : [ "${principal:id}" ]
+            }
+          } ]
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:LISTAR_ATIVIDADES:TURMA",
+      "effect" : "ALLOW",
+      "action" : "LISTAR_ATIVIDADES",
+      "resource" : "TURMA",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Professores" ]
+            }
+          }, {
+            "Igual" : {
+              "turma:professorId" : [ "${principal:id}" ]
+            }
+          } ]
+        }, {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Alunos" ]
+            }
+          }, {
+            "ParaAlgumValor:Igual" : {
+              "turma:alunoIds" : [ "${principal:id}" ]
+            }
+          } ]
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:LISTAR_POSTS:TURMA",
+      "effect" : "ALLOW",
+      "action" : "LISTAR_POSTS",
+      "resource" : "TURMA",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Professores" ]
+            }
+          }, {
+            "Igual" : {
+              "turma:professorId" : [ "${principal:id}" ]
+            }
+          } ]
+        }, {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Alunos" ]
+            }
+          }, {
+            "ParaAlgumValor:Igual" : {
+              "turma:alunoIds" : [ "${principal:id}" ]
+            }
+          } ]
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:LISTAR_COMENTARIOS:TURMA",
+      "effect" : "ALLOW",
+      "action" : "LISTAR_COMENTARIOS",
+      "resource" : "TURMA",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Professores" ]
+            }
+          }, {
+            "Igual" : {
+              "turma:professorId" : [ "${principal:id}" ]
+            }
+          } ]
+        }, {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Alunos" ]
+            }
+          }, {
+            "ParaAlgumValor:Igual" : {
+              "turma:alunoIds" : [ "${principal:id}" ]
+            }
+          } ]
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:LISTAR_PARTICIPANTES:TURMA",
+      "effect" : "ALLOW",
+      "action" : "LISTAR_PARTICIPANTES",
+      "resource" : "TURMA",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Professores" ]
+            }
+          }, {
+            "Igual" : {
+              "turma:professorId" : [ "${principal:id}" ]
+            }
+          } ]
+        }, {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Alunos" ]
+            }
+          }, {
+            "ParaAlgumValor:Igual" : {
+              "turma:alunoIds" : [ "${principal:id}" ]
+            }
+          } ]
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:VER_PERFIL:USUARIO",
+      "effect" : "ALLOW",
+      "action" : "VER_PERFIL",
+      "resource" : "USUARIO",
+      "condition" : {
+        "Igual" : {
+          "recurso:id" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:CRIAR_TURMA:TURMA",
+      "effect" : "ALLOW",
+      "action" : "CRIAR_TURMA",
+      "resource" : "TURMA"
+    }, {
+      "sid" : "ALLOW:CRIAR_ALUNO:USUARIO",
+      "effect" : "ALLOW",
+      "action" : "CRIAR_ALUNO",
+      "resource" : "USUARIO"
+    }, {
+      "sid" : "ALLOW:CRIAR_ATIVIDADE:TURMA",
+      "effect" : "ALLOW",
+      "action" : "CRIAR_ATIVIDADE",
+      "resource" : "TURMA",
+      "condition" : {
+        "Igual" : {
+          "turma:professorId" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:CRIAR_POST:TURMA",
+      "effect" : "ALLOW",
+      "action" : "CRIAR_POST",
+      "resource" : "TURMA",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Professores" ]
+            }
+          }, {
+            "Igual" : {
+              "turma:professorId" : [ "${principal:id}" ]
+            }
+          } ]
+        }, {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Alunos" ]
+            }
+          }, {
+            "ParaAlgumValor:Igual" : {
+              "turma:alunoIds" : [ "${principal:id}" ]
+            }
+          } ]
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:CRIAR_COMENTARIO:TURMA",
+      "effect" : "ALLOW",
+      "action" : "CRIAR_COMENTARIO",
+      "resource" : "TURMA",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Professores" ]
+            }
+          }, {
+            "Igual" : {
+              "turma:professorId" : [ "${principal:id}" ]
+            }
+          } ]
+        }, {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Alunos" ]
+            }
+          }, {
+            "ParaAlgumValor:Igual" : {
+              "turma:alunoIds" : [ "${principal:id}" ]
+            }
+          } ]
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:EDITAR_TURMA:TURMA",
+      "effect" : "ALLOW",
+      "action" : "EDITAR_TURMA",
+      "resource" : "TURMA",
+      "condition" : {
+        "Igual" : {
+          "turma:professorId" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:EDITAR_ATIVIDADE:ATIVIDADE",
+      "effect" : "ALLOW",
+      "action" : "EDITAR_ATIVIDADE",
+      "resource" : "ATIVIDADE",
+      "condition" : {
+        "Igual" : {
+          "turma:professorId" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:EDITAR_USUARIO:USUARIO",
+      "effect" : "ALLOW",
+      "action" : "EDITAR_USUARIO",
+      "resource" : "USUARIO",
+      "condition" : {
+        "Igual" : {
+          "recurso:id" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:EDITAR_POST:POST",
+      "effect" : "ALLOW",
+      "action" : "EDITAR_POST",
+      "resource" : "POST",
+      "condition" : {
+        "Igual" : {
+          "recurso:autorId" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:EDITAR_COMENTARIO:COMENTARIO",
+      "effect" : "ALLOW",
+      "action" : "EDITAR_COMENTARIO",
+      "resource" : "COMENTARIO",
+      "condition" : {
+        "Igual" : {
+          "recurso:autorId" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:EXCLUIR_TURMA:TURMA",
+      "effect" : "ALLOW",
+      "action" : "EXCLUIR_TURMA",
+      "resource" : "TURMA",
+      "condition" : {
+        "Igual" : {
+          "turma:professorId" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:EXCLUIR_ATIVIDADE:ATIVIDADE",
+      "effect" : "ALLOW",
+      "action" : "EXCLUIR_ATIVIDADE",
+      "resource" : "ATIVIDADE",
+      "condition" : {
+        "Igual" : {
+          "recurso:autorId" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:EXCLUIR_USUARIO:USUARIO",
+      "effect" : "ALLOW",
+      "action" : "EXCLUIR_USUARIO",
+      "resource" : "USUARIO",
+      "condition" : {
+        "Igual" : {
+          "recurso:id" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:EXCLUIR_POST:POST",
+      "effect" : "ALLOW",
+      "action" : "EXCLUIR_POST",
+      "resource" : "POST",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "Igual" : {
+            "turma:professorId" : [ "${principal:id}" ]
+          }
+        }, {
+          "Igual" : {
+            "recurso:autorId" : [ "${principal:id}" ]
+          }
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:EXCLUIR_COMENTARIO:COMENTARIO",
+      "effect" : "ALLOW",
+      "action" : "EXCLUIR_COMENTARIO",
+      "resource" : "COMENTARIO",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "Igual" : {
+            "turma:professorId" : [ "${principal:id}" ]
+          }
+        }, {
+          "Igual" : {
+            "recurso:autorId" : [ "${principal:id}" ]
+          }
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:MATRICULAR_ALUNO:TURMA",
+      "effect" : "ALLOW",
+      "action" : "MATRICULAR_ALUNO",
+      "resource" : "TURMA",
+      "condition" : {
+        "Igual" : {
+          "turma:professorId" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:DESMATRICULAR_ALUNO:TURMA",
+      "effect" : "ALLOW",
+      "action" : "DESMATRICULAR_ALUNO",
+      "resource" : "TURMA",
+      "condition" : {
+        "Igual" : {
+          "turma:professorId" : [ "${principal:id}" ]
+        }
+      }
+    } ]
+  }, {
+    "nome" : "Aluno",
+    "statements" : [ {
+      "sid" : "ALLOW:LISTAR_TURMAS:TURMA",
+      "effect" : "ALLOW",
+      "action" : "LISTAR_TURMAS",
+      "resource" : "TURMA",
+      "condition" : {
+        "ParaAlgumValor:Igual" : {
+          "turma:alunoIds" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:VER_TURMA:TURMA",
+      "effect" : "ALLOW",
+      "action" : "VER_TURMA",
+      "resource" : "TURMA",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Professores" ]
+            }
+          }, {
+            "Igual" : {
+              "turma:professorId" : [ "${principal:id}" ]
+            }
+          } ]
+        }, {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Alunos" ]
+            }
+          }, {
+            "ParaAlgumValor:Igual" : {
+              "turma:alunoIds" : [ "${principal:id}" ]
+            }
+          } ]
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:LISTAR_ATIVIDADES:TURMA",
+      "effect" : "ALLOW",
+      "action" : "LISTAR_ATIVIDADES",
+      "resource" : "TURMA",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Professores" ]
+            }
+          }, {
+            "Igual" : {
+              "turma:professorId" : [ "${principal:id}" ]
+            }
+          } ]
+        }, {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Alunos" ]
+            }
+          }, {
+            "ParaAlgumValor:Igual" : {
+              "turma:alunoIds" : [ "${principal:id}" ]
+            }
+          } ]
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:LISTAR_POSTS:TURMA",
+      "effect" : "ALLOW",
+      "action" : "LISTAR_POSTS",
+      "resource" : "TURMA",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Professores" ]
+            }
+          }, {
+            "Igual" : {
+              "turma:professorId" : [ "${principal:id}" ]
+            }
+          } ]
+        }, {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Alunos" ]
+            }
+          }, {
+            "ParaAlgumValor:Igual" : {
+              "turma:alunoIds" : [ "${principal:id}" ]
+            }
+          } ]
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:LISTAR_COMENTARIOS:TURMA",
+      "effect" : "ALLOW",
+      "action" : "LISTAR_COMENTARIOS",
+      "resource" : "TURMA",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Professores" ]
+            }
+          }, {
+            "Igual" : {
+              "turma:professorId" : [ "${principal:id}" ]
+            }
+          } ]
+        }, {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Alunos" ]
+            }
+          }, {
+            "ParaAlgumValor:Igual" : {
+              "turma:alunoIds" : [ "${principal:id}" ]
+            }
+          } ]
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:LISTAR_PARTICIPANTES:TURMA",
+      "effect" : "ALLOW",
+      "action" : "LISTAR_PARTICIPANTES",
+      "resource" : "TURMA",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Professores" ]
+            }
+          }, {
+            "Igual" : {
+              "turma:professorId" : [ "${principal:id}" ]
+            }
+          } ]
+        }, {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Alunos" ]
+            }
+          }, {
+            "ParaAlgumValor:Igual" : {
+              "turma:alunoIds" : [ "${principal:id}" ]
+            }
+          } ]
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:VER_PERFIL:USUARIO",
+      "effect" : "ALLOW",
+      "action" : "VER_PERFIL",
+      "resource" : "USUARIO",
+      "condition" : {
+        "Igual" : {
+          "recurso:id" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:CRIAR_POST:TURMA",
+      "effect" : "ALLOW",
+      "action" : "CRIAR_POST",
+      "resource" : "TURMA",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Professores" ]
+            }
+          }, {
+            "Igual" : {
+              "turma:professorId" : [ "${principal:id}" ]
+            }
+          } ]
+        }, {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Alunos" ]
+            }
+          }, {
+            "ParaAlgumValor:Igual" : {
+              "turma:alunoIds" : [ "${principal:id}" ]
+            }
+          } ]
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:CRIAR_COMENTARIO:TURMA",
+      "effect" : "ALLOW",
+      "action" : "CRIAR_COMENTARIO",
+      "resource" : "TURMA",
+      "condition" : {
+        "AlgumaDas" : [ {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Professores" ]
+            }
+          }, {
+            "Igual" : {
+              "turma:professorId" : [ "${principal:id}" ]
+            }
+          } ]
+        }, {
+          "TodasAs" : [ {
+            "ParaAlgumValor:Igual" : {
+              "principal:groups" : [ "Alunos" ]
+            }
+          }, {
+            "ParaAlgumValor:Igual" : {
+              "turma:alunoIds" : [ "${principal:id}" ]
+            }
+          } ]
+        } ]
+      }
+    }, {
+      "sid" : "ALLOW:EDITAR_POST:POST",
+      "effect" : "ALLOW",
+      "action" : "EDITAR_POST",
+      "resource" : "POST",
+      "condition" : {
+        "Igual" : {
+          "recurso:autorId" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:EDITAR_COMENTARIO:COMENTARIO",
+      "effect" : "ALLOW",
+      "action" : "EDITAR_COMENTARIO",
+      "resource" : "COMENTARIO",
+      "condition" : {
+        "Igual" : {
+          "recurso:autorId" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:EDITAR_USUARIO:USUARIO",
+      "effect" : "ALLOW",
+      "action" : "EDITAR_USUARIO",
+      "resource" : "USUARIO",
+      "condition" : {
+        "Igual" : {
+          "recurso:id" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:EXCLUIR_POST:POST",
+      "effect" : "ALLOW",
+      "action" : "EXCLUIR_POST",
+      "resource" : "POST",
+      "condition" : {
+        "Igual" : {
+          "recurso:autorId" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:EXCLUIR_COMENTARIO:COMENTARIO",
+      "effect" : "ALLOW",
+      "action" : "EXCLUIR_COMENTARIO",
+      "resource" : "COMENTARIO",
+      "condition" : {
+        "Igual" : {
+          "recurso:autorId" : [ "${principal:id}" ]
+        }
+      }
+    }, {
+      "sid" : "ALLOW:EXCLUIR_USUARIO:USUARIO",
+      "effect" : "ALLOW",
+      "action" : "EXCLUIR_USUARIO",
+      "resource" : "USUARIO",
+      "condition" : {
+        "Igual" : {
+          "recurso:id" : [ "${principal:id}" ]
+        }
+      }
+    } ]
+  } ]
+}

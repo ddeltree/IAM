@@ -17,6 +17,23 @@ import poo.iam.condition.Condition;
  */
 public class PermissionHolder {
   private final Set<Statement> statements = new LinkedHashSet<>();
+  private final List<Policy> anexadas = new ArrayList<>();
+
+  /**
+   * Anexa uma política nomeada. As cláusulas dela passam a valer sem serem
+   * copiadas para cá — mudá-la muda o acesso de todos que a têm anexada.
+   */
+  public boolean anexar(Policy policy) {
+    return anexadas.contains(policy) ? false : anexadas.add(policy);
+  }
+
+  public boolean desanexar(Policy policy) {
+    return anexadas.remove(policy);
+  }
+
+  public List<Policy> getPoliticasAnexadas() {
+    return Collections.unmodifiableList(anexadas);
+  }
 
   public boolean add(Statement statement) {
     return statements.add(statement);
@@ -74,7 +91,26 @@ public class PermissionHolder {
         .anyMatch(s -> s.getEffect() == Effect.DENY && s.falaSobre(permission));
   }
 
+  /**
+   * Todas as cláusulas que valem: as inline primeiro, depois as das políticas
+   * anexadas, na ordem em que foram anexadas.
+   *
+   * A ordem não muda a decisão — negação explícita vence esteja onde estiver —,
+   * mas muda qual cláusula é <em>nomeada</em> como decisiva, e uma explicação
+   * que muda de resposta entre execuções não explica nada.
+   */
   public Set<Statement> getStatements() {
+    if (anexadas.isEmpty())
+      return Collections.unmodifiableSet(statements);
+
+    var todas = new LinkedHashSet<>(statements);
+    for (Policy policy : anexadas)
+      todas.addAll(policy.getStatements());
+    return Collections.unmodifiableSet(todas);
+  }
+
+  /** Só as inline, sem as das políticas anexadas. */
+  public Set<Statement> getStatementsInline() {
     return Collections.unmodifiableSet(statements);
   }
 
@@ -105,5 +141,6 @@ public class PermissionHolder {
   /** Esvazia a política. */
   public void clear() {
     statements.clear();
+    anexadas.clear();
   }
 }
