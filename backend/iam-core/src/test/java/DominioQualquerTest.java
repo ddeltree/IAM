@@ -1,7 +1,9 @@
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -195,5 +197,62 @@ class DominioQualquerTest {
 
     // conferindo que o primeiro seguiu intacto depois de o segundo ser montado
     assertTrue(iam.motor().isAllowed(bruno, LER_ARQUIVO, deBruno));
+  }
+  /**
+   * Uma corrente de pais que se fecha não pode travar o motor.
+   *
+   * O grafo de principais já é percorrido com conjunto de visitados, e o
+   * {@code AuthorizationEngine} explica por quê: nada impede um grupo de herdar de outro
+   * que herda dele. A corrente de {@link Resource#getPai()} tem exatamente a mesma forma
+   * — uma pasta dentro da própria subpasta é um erro de dados, não uma impossibilidade —
+   * e sem a mesma proteção ela é um laço infinito com a thread do pedido dentro.
+   *
+   * O tempo limite é o que transforma o laço em falha: sem ele, esta suíte não falha,
+   * pendura.
+   */
+  @Test
+  void umaCorrenteDePaisQueSeFechaNaoTrava() {
+    var dentroUmaDaOutra = new PastaCiclica("p1");
+    dentroUmaDaOutra.pai = new PastaCiclica("p2");
+    ((PastaCiclica) dentroUmaDaOutra.pai).pai = dentroUmaDaOutra;
+
+    // provedor próprio: o do cenário lê um Arquivo, e o que está em jogo aqui é a
+    // subida da corrente, não o que cada nível publica
+    var comCiclo = IamFactory.novo().atributos(new AttributeProvider() {
+      public ResourceType tipo() {
+        return TipoDeArquivo.ARQUIVO;
+      }
+
+      public Map<String, List<String>> atributosDe(Resource r) {
+        return Map.of("autorId", List.of(r.getId()));
+      }
+    }).construir();
+
+    assertTimeoutPreemptively(Duration.ofSeconds(2),
+        () -> comCiclo.motor().isAllowed(ana, LER_ARQUIVO, dentroUmaDaOutra),
+        "a corrente de pais se fechou e o motor não saiu dela");
+  }
+
+  /** Uma pasta cujo pai se pode apontar depois — é como o ciclo se monta. */
+  static final class PastaCiclica implements Resource {
+    private final String id;
+    Resource pai;
+
+    PastaCiclica(String id) {
+      this.id = id;
+    }
+
+    public ResourceType getType() {
+      return TipoDeArquivo.ARQUIVO;
+    }
+
+    public String getId() {
+      return id;
+    }
+
+    @Override
+    public Resource getPai() {
+      return pai;
+    }
   }
 }

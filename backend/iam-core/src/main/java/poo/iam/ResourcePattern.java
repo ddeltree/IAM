@@ -58,12 +58,19 @@ public final class ResourcePattern {
   }
 
   /**
-   * Recurso nulo casa sempre: é como se pedem as ações que não têm alvo, como
-   * criar uma turma.
+   * Recurso nulo é como se pedem as ações que não têm alvo, como criar uma turma — e é
+   * alcançado só por um padrão que não restringe o id.
+   *
+   * Casar sempre era o mais simples e dizia algo falso: uma concessão presa a
+   * {@code TURMA/3} passava a autorizar criar turmas, porque não havia id para conferir.
+   * Quem escreveu {@code TURMA/3} disse "esta turma", e um pedido que não mira turma
+   * nenhuma não é esta turma. {@code *} e {@code TURMA} continuam alcançando os dois
+   * formatos de pedido, que é o caso de quase toda cláusula — inclusive as que
+   * {@link #deTipo(ResourceType)} produz.
    */
   public boolean casa(Resource recurso) {
     if (recurso == null)
-      return true;
+      return id.equals("*");
     return casaTipo(recurso.getType()) && Curinga.casa(recurso.getId(), id);
   }
 

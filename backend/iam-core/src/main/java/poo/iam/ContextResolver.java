@@ -1,7 +1,9 @@
 package poo.iam;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +101,13 @@ public final class ContextResolver {
       principal.chavesDeContexto().forEach(valores::putIfAbsent);
     }
 
-    for (Resource atual = alvo; atual != null; atual = atual.getPai()) {
+    // a corrente pode se fechar: uma pasta dentro da própria subpasta é erro de dados,
+    // não impossibilidade, e sem isto a subida é um laço infinito com a thread do pedido
+    // dentro. Por identidade, e não por equals, pela mesma razão do grafo de principais:
+    // dois recursos iguais não são forçosamente o mesmo objeto na corrente.
+    var visitados = Collections.newSetFromMap(new IdentityHashMap<Resource, Boolean>());
+
+    for (Resource atual = alvo; atual != null && visitados.add(atual); atual = atual.getPai()) {
       var prefixo = atual.getType().name().toLowerCase() + ":";
       var atributos = atributosDe(atual);
       atributos.forEach((chave, valor) -> valores.putIfAbsent(prefixo + chave, valor));

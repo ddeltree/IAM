@@ -83,4 +83,17 @@ public final class OperatorRegistry {
   public boolean conhece(String nome) {
     return registro.containsKey(nome);
   }
+
+  /**
+   * Os nomes registrados, sem os prefixos — que são decoradores sobre estes, e não
+   * operadores por si.
+   *
+   * Existe para quem precisa percorrer o vocabulário inteiro em vez de perguntar por um
+   * nome de cada vez. O caso é o teste que sustenta a consultabilidade: ele varre os
+   * operadores conferindo que a poda concorda com a varredura, e escrever a lista à mão
+   * ali faria o operador seguinte entrar sem caso — passando no teste em vez de quebrá-lo.
+   */
+  public java.util.Set<String> nomes() {
+    return java.util.Collections.unmodifiableSet(registro.keySet());
+  }
 }

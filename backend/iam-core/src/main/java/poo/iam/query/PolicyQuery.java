@@ -65,6 +65,7 @@ public final class PolicyQuery {
     public final Map<String, List<User>> viaPapel;
     public final int avaliados;
     public final int conhecidos;
+    /** A poda encolheu o conjunto, ou acabou candidatando todo mundo? */
     public final boolean podou;
 
     Resultado(List<User> principais, Map<String, List<User>> viaPapel, int avaliados,
@@ -85,18 +86,19 @@ public final class PolicyQuery {
   }
 
   public Resultado quemPode(Permission permissao, Resource recurso) {
-    var candidatos = candidatos(permissao, recurso);
+    var aAvaliar = candidatos(permissao, recurso);
     var conhecidos = diretorio.usuarios().size();
-
-    // sem poda possível, a lista de candidatos é todo mundo
-    var aAvaliar = candidatos == null ? new ArrayList<>(diretorio.usuarios()) : candidatos;
 
     var permitidos = aAvaliar.stream()
         .filter(u -> motor.isAllowed(u, permissao, recurso))
         .toList();
 
+    // "podou" é encolheu, e não "foi capaz de podar": a poda é estrutural, sempre
+    // acontece, e quando ela não sabe restringir devolve todo mundo em vez de desistir.
+    // Enquanto o campo dizia a segunda coisa, ele era constante — e um número que não
+    // varia não conta trabalho evitado nenhum.
     return new Resultado(permitidos, viaPapel(permissao, recurso), aAvaliar.size(), conhecidos,
-        candidatos != null);
+        aAvaliar.size() < conhecidos);
   }
 
   /**
@@ -133,8 +135,11 @@ public final class PolicyQuery {
   }
 
   /**
-   * Os principais que alguma concessão poderia alcançar, ou {@code null} quando
-   * não deu para restringir.
+   * Os principais que alguma concessão poderia alcançar.
+   *
+   * Nunca devolve menos do que o conjunto verdadeiro: quando uma cláusula não diz a quem
+   * atende, todos os membros do grupo dela entram. É por isso que não há um "não deu para
+   * restringir" a reportar — a resposta de não saber é incluir.
    */
   private List<User> candidatos(Permission permissao, Resource recurso) {
     // o contexto vai sem principal: é justamente o lado que fica em aberto

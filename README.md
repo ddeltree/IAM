@@ -90,7 +90,7 @@ que mantém tudo na mesma origem e faz o cookie de sessão chegar ao backend.
 ### Testes
 
 ```bash
-cd backend && mvn test     # 51 no núcleo, 104 no classroom, 11 no console
+cd backend && mvn test     # 59 no núcleo, 104 no classroom, 11 no console
 ```
 
 ## Primeiros passos no classroom

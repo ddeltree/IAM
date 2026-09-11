@@ -3,6 +3,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,10 @@ import poo.iam.Resource;
 import poo.iam.ResourceType;
 import poo.iam.Statement;
 import poo.iam.User;
+import poo.iam.condition.Comparacao;
 import poo.iam.condition.Condition;
+import poo.iam.condition.OperatorRegistry;
+import poo.iam.condition.Operadores;
 import poo.iam.query.PredicateRenderer;
 import poo.iam.query.SqlWhereRenderer;
 import poo.iam.spi.AttributeProvider;
@@ -66,18 +70,20 @@ class ConsultabilidadeTest {
   private List<User> usuarios;
   private List<Arquivo> arquivos;
 
+  static final AttributeProvider PROVEDOR = new AttributeProvider() {
+    public ResourceType tipo() {
+      return Tipo.ARQUIVO;
+    }
+
+    public Map<String, List<String>> atributosDe(Resource r) {
+      var a = (Arquivo) r;
+      return Map.of("autorId", List.of(a.autorId()), "tamanho", List.of(a.tamanho()));
+    }
+  };
+
   @BeforeEach
   void montar() {
-    var provedor = new AttributeProvider() {
-      public ResourceType tipo() {
-        return Tipo.ARQUIVO;
-      }
-
-      public Map<String, List<String>> atributosDe(Resource r) {
-        var a = (Arquivo) r;
-        return Map.of("autorId", List.of(a.autorId()), "tamanho", List.of(a.tamanho()));
-      }
-    };
+    var provedor = PROVEDOR;
 
     var ana = new User("1", "Ana");
     var bruno = new User("2", "Bruno");
@@ -256,5 +262,103 @@ class ConsultabilidadeTest {
     // e o DENY condicional a exclui do arquivo grande, sem excluí-la do pequeno
     var grande = arquivos.get(1);
     assertFalse(iam.consultas().quemPode(APAGAR, grande).principais.contains(carla));
+  }
+  /**
+   * A matriz inteira, e não uma amostra dela.
+   *
+   * {@link #aPodaEAVarreduraConcordamSempre()} confere a invariante sobre quatro arquivos
+   * e um operador — o {@code Igual}. Mas quem extrai a restrição lê a cláusula, e uma
+   * cláusula é feita de <em>qualquer</em> operador: é a lista deles, e não a lista de
+   * arquivos, que diz se a matriz está coberta. Com só um exercitado, o extrator pôde
+   * devolver o conjunto <b>invertido</b> para {@code Diferente} — a poda decidindo, que é
+   * exatamente o que este arquivo promete que nunca acontece.
+   *
+   * Por isso a lista vem de {@link OperatorRegistry#nomes()}, e não escrita à mão:
+   * operador novo sem caso quebra este teste em vez de passar por ele.
+   */
+  @Test
+  void aPodaEAVarreduraConcordamEmTodoOperador() {
+    var registro = OperatorRegistry.padrao();
+    var conferidos = new LinkedHashSet<String>();
+
+    for (String nome : registro.nomes()) {
+      // cada operador sozinho e sob cada prefixo: os prefixos são decoradores, e um
+      // extrator que lê o nome do operador precisa reconhecer o decorado também
+      for (String prefixo : List.of("", Operadores.PARA_ALGUM_VALOR, Operadores.PARA_TODO_VALOR,
+          Operadores.SE_EXISTIR)) {
+        var condicao = new Comparacao(registro.get(prefixo + nome), "recurso:autorId",
+            List.of("${principal:id}"));
+        conferirConcordancia(prefixo + nome, condicao);
+      }
+      conferidos.add(nome);
+    }
+
+    assertEquals(registro.nomes(), conferidos,
+        "um operador do registro ficou de fora da matriz");
+  }
+
+  /**
+   * Monta um sistema cuja única concessão é esta condição, e confere que a poda e a
+   * varredura devolvem o mesmo conjunto sobre cada arquivo.
+   */
+  private void conferirConcordancia(String operador, Condition condicao) {
+    var comOOperador = sistemaOnde(todos -> todos.grantPermission(LER, condicao));
+
+    for (Arquivo arquivo : arquivos) {
+      var varrido = Set.copyOf(comOOperador.consultas().quemPodeVarrendo(LER, arquivo));
+      var podado = Set.copyOf(comOOperador.consultas().quemPode(LER, arquivo).principais);
+      assertEquals(varrido, podado,
+          "a poda mudou a resposta de " + operador + " sobre " + arquivo.id());
+    }
+  }
+
+  /** Três pessoas, um grupo com as três, e a política que o teste quiser dar a ele. */
+  private Iam sistemaOnde(java.util.function.Consumer<Group> politicaDoGrupo) {
+    var gente = List.of(new User("1", "Ana"), new User("2", "Bruno"), new User("3", "Carla"));
+    var todos = new Group("Todos");
+    for (User u : gente)
+      MembershipManager.link(u, todos);
+    politicaDoGrupo.accept(todos);
+
+    return IamFactory.novo()
+        .atributos(PROVEDOR)
+        .principais(new PrincipalDirectory() {
+          public Collection<User> usuarios() {
+            return gente;
+          }
+
+          public Collection<Group> grupos() {
+            return List.of(todos);
+          }
+        })
+        .construir();
+  }
+
+  /**
+   * {@code podou} precisa dizer alguma coisa.
+   *
+   * O campo existe para contar o trabalho evitado, e o console imprime dois textos a
+   * partir dele — "a poda considerou N de M" ou "sem poda possível". Enquanto ele foi
+   * constante, um dos dois nunca podia aparecer, e o outro não informava nada: a poda é
+   * estrutural, sempre acontece, e quando ela não sabe restringir inclui todo mundo em
+   * vez de desistir. O que varia, e é o que interessa, é se o conjunto <em>encolheu</em>.
+   */
+  @Test
+  void podouDizSeAPodaEncolheuOConjunto() {
+    // encolheu: a concessão nomeia quem, então só a autora do arquivo é candidata
+    var restrita = sistemaOnde(
+        todos -> todos.grantPermission(LER, Condition.igual("recurso:autorId", "${principal:id}")))
+        .consultas().quemPode(LER, arquivos.get(0));
+
+    assertTrue(restrita.podou, "a poda escolheu candidatos e o campo diz que não");
+    assertEquals(1, restrita.avaliados);
+    assertEquals(3, restrita.conhecidos);
+
+    // não encolheu: uma concessão irrestrita a um grupo de todo mundo candidata todo mundo
+    var irrestrita = sistemaOnde(todos -> todos.add(Statement.allow("*", "*")))
+        .consultas().quemPode(LER, arquivos.get(0));
+
+    assertFalse(irrestrita.podou, "não havia o que podar, e o campo diz que podou");
+    assertEquals(irrestrita.conhecidos, irrestrita.avaliados);
   }
 }
